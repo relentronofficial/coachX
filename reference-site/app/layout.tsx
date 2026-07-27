@@ -11,17 +11,34 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-sans', display: 'swa
 const lora = Lora({ subsets: ['latin'], variable: '--font-serif', display: 'swap' });
 
 export const metadata: Metadata = {
+  // Absolute base for every relative URL Next generates (OG images, canonical
+  // links). Without it, share previews on WhatsApp/LinkedIn get a relative
+  // path they cannot resolve, and the card renders without an image.
+  metadataBase: new URL(brand.url),
   title: {
     default: `${brand.name} — ${brand.tagline}`,
     template: `%s · ${brand.short}`,
   },
-  description:
-    'Original reference scaffold of a coaching-community website. Neutral placeholder content and design tokens — not affiliated with any real brand.',
+  description: brand.description,
+  alternates: { canonical: '/' },
+  applicationName: brand.short,
+  keywords: ['coaching business', 'coach training', 'niche finder', 'Tamil Business Tribe', 'CoachX'],
   openGraph: {
-    title: brand.name,
-    description: brand.tagline,
     type: 'website',
+    siteName: brand.name,
+    url: brand.url,
+    title: `${brand.name} — ${brand.tagline}`,
+    description: brand.description,
+    locale: 'en_IN',
+    images: [{ url: '/brand/coachx-logo.png', width: 1617, height: 444, alt: brand.short }],
   },
+  twitter: {
+    card: 'summary_large_image',
+    title: `${brand.name} — ${brand.tagline}`,
+    description: brand.description,
+    images: ['/brand/coachx-logo.png'],
+  },
+  robots: { index: true, follow: true },
 };
 
 export const viewport: Viewport = {

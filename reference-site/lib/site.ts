@@ -11,6 +11,17 @@ export const brand = {
   short: 'CoachX',
   tagline: 'Scale your coaching business in just 3 days.',
   email: 'support@tamilbusinesstribe.com',
+  /**
+   * Canonical origin. Everything absolute — `metadataBase`, canonical links,
+   * Open Graph and the sitemap — derives from this one value, so moving the
+   * site to another domain is a single edit.
+   *
+   * Overridable per environment with `NEXT_PUBLIC_SITE_URL` so preview
+   * deployments advertise their own origin instead of production's.
+   */
+  url: process.env.NEXT_PUBLIC_SITE_URL || 'https://coachx.tamilbusinesstribe.com',
+  description:
+    'CoachX by Tamil Business Tribe — a 3-day live workshop and coaching-growth system that helps coaches find their niche, package their offer and build predictable monthly revenue.',
 };
 
 export type NavItem = { label: string; href: string };
@@ -85,7 +96,14 @@ export const features = [
 ];
 
 // The 5-week Coaching Growth Framework.
-export const process = [
+/**
+ * "How it works" steps.
+ *
+ * Named `processSteps`, not `process`: a module-scope export called `process`
+ * shadows the Node global inside this file, so `process.env` silently resolves
+ * to this array instead of the environment.
+ */
+export const processSteps = [
   { step: '01', title: 'Lead System Setup', body: 'Build a dependable pipeline of high-quality leads.' },
   { step: '02', title: 'Conversion System', body: 'Convert conversations into paying clients.' },
   { step: '03', title: 'Growth & Automation', body: 'Automate follow-up and delivery to save time.' },

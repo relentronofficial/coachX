@@ -1,7 +1,7 @@
-import Link from 'next/link';
+﻿import Link from 'next/link';
 import Image from 'next/image';
 import { Button, Container, Section, SectionHeading, Badge } from './ui';
-import { stats, logos, features, process, programs, stories, img, type Program } from '@/lib/site';
+import { stats, logos, features, processSteps, programs, stories, img, type Program } from '@/lib/site';
 import { listPublishedPrograms } from '@/lib/cms/store';
 
 /** Hero content (editable via the CMS; falls back to these defaults). */
@@ -224,7 +224,7 @@ export function Process() {
     <Section className="bg-slate-50">
       <SectionHeading eyebrow="The framework" title="The 5-week Coaching Growth Framework" />
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
-        {process.map((p) => (
+        {processSteps.map((p) => (
           <div key={p.step} className="relative">
             <span className="font-serif text-5xl font-bold text-teal/30">{p.step}</span>
             <h3 className="mt-2 text-lg font-bold text-ink">{p.title}</h3>

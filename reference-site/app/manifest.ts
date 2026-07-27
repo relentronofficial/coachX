@@ -1,10 +1,13 @@
 import type { MetadataRoute } from 'next';
+import { brand } from '@/lib/site';
 
+/** Values come from `lib/site.ts` so the app name/description have one source. */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'CoachX by Tamil Business Tribe',
-    short_name: 'CoachX',
-    description: 'Scale your coaching business in just 3 days.',
+    name: brand.name,
+    short_name: brand.short,
+    description: brand.tagline,
+    id: '/',
     start_url: '/',
     display: 'standalone',
     background_color: '#ffffff',
