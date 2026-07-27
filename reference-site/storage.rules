@@ -1,0 +1,66 @@
+rules_version = '2';
+
+/**
+ * Cloud Storage rules.
+ *
+ * Mirrors the Firestore model: a user owns everything under their own uid, and
+ * admin status is read from `users/{uid}` in Firestore so roles cannot be
+ * self-escalated from the client. Uploads are constrained by content type and
+ * size at the rules layer — client-side validation is a convenience, not a
+ * control.
+ */
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Must stay identical to isAdmin() in firestore.rules — two definitions of
+    // "admin" that drift apart is how privilege gaps appear.
+    function isAdmin() {
+      return isSignedIn()
+        && firestore.exists(/databases/(default)/documents/users/$(request.auth.uid))
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role
+             in ['admin', 'super-admin']
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.status == 'active';
+    }
+
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    function underMB(n) {
+      return request.resource.size < n * 1024 * 1024;
+    }
+
+    // ---- Avatars: publicly readable, owner-writable, images only ----------
+    match /avatars/{uid}/{fileName} {
+      allow read: if true;
+      allow write: if isOwner(uid) && isImage() && underMB(5);
+      allow delete: if isOwner(uid) || isAdmin();
+    }
+
+    // ---- User uploads: private to the owner (and admins) -----------------
+    match /uploads/{uid}/{allPaths=**} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow write: if isOwner(uid) && underMB(20);
+      allow delete: if isOwner(uid) || isAdmin();
+    }
+
+    // ---- Admin-managed public assets -------------------------------------
+    match /public/{allPaths=**} {
+      allow read: if true;
+      allow write, delete: if isAdmin();
+    }
+
+    // ---- Everything else denied ------------------------------------------
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

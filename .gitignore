@@ -1,0 +1,19 @@
+﻿# Root-level safety net. Each project also has its own .gitignore; this exists
+# so a stray secret or dependency tree at the root can never be committed.
+node_modules/
+.env
+.env.*
+!.env.example
+*.log
+
+# Claude Code local permission cache — machine-specific, not project config.
+.claude/settings.local.json
+
+# Windows / editor noise
+Thumbs.db
+.DS_Store
+
+# Build/test scratch (CLAUDE.md names these as scratch, not source)
+tsconfig.tsbuildinfo
+test-results/
+devserver.log

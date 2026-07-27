@@ -1,0 +1,130 @@
+rules_version = '2';
+
+// CoachX Firestore Security Rules — role-based access, enforced server-side by
+// Firestore. The client is never trusted: role/status live in users/{uid} and
+// cannot be self-escalated. Deploy with: firebase deploy --only firestore:rules
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function profile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    function isAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && profile().role in ['admin', 'super-admin']
+        && profile().status == 'active';
+    }
+
+    // ---- User profiles -----------------------------------------------------
+    match /users/{uid} {
+      // Own profile or any admin may read.
+      allow read: if isSignedIn() && (request.auth.uid == uid || isAdmin());
+
+      // A user creates ONLY their own profile, forced to role 'user' + active.
+      allow create: if isSignedIn()
+        && request.auth.uid == uid
+        && request.resource.data.uid == uid
+        && request.resource.data.role == 'user'
+        && request.resource.data.status == 'active';
+
+      // A user may update their own profile but NOT role or status.
+      allow update: if isSignedIn()
+        && request.auth.uid == uid
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.status == resource.data.status;
+
+      // Admins may change role/status and delete.
+      allow update, delete: if isAdmin();
+    }
+
+    // ---- Form submissions --------------------------------------------------
+    match /submissions/{id} {
+      allow create: if true;              // public forms may write
+      allow read, update, delete: if isAdmin();
+    }
+
+    // ---- CMS content -------------------------------------------------------
+    match /cms/{document=**} {
+      allow read: if true;                // published content is public
+      allow write: if isAdmin();
+    }
+
+    // ==== AI Niche Finder ==================================================
+
+    // Question config — public read (needed to render the assessment), admin write.
+    match /questionCategories/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /nicheQuestions/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    // App/engine settings (scoring rules, prompt templates) — public read, admin write.
+    match /settings/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // In-progress attempt — one doc per user, keyed by uid. Owner or admin.
+    match /nicheAnswers/{uid} {
+      allow read, write: if isSignedIn() && request.auth.uid == uid;
+      allow read: if isAdmin();
+    }
+
+    // Completed results — a user may create/read ONLY their own; admins read all.
+    match /nicheResults/{id} {
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+      allow read: if isSignedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow update, delete: if isAdmin();
+    }
+
+    // Report summaries / favourites — owner-scoped; admins read all.
+    match /reports/{id} {
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+      allow read, update: if isSignedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // Analytics events — any signed-in user may append; only admins can read.
+    match /analytics/{id} {
+      allow create: if isSignedIn();
+      allow read: if isAdmin();
+    }
+
+    // Audit logs — admin only.
+    match /auditLogs/{id} {
+      allow create, read: if isAdmin();
+    }
+
+    // Topic management overlay — public read (assessment needs it), admin write.
+    match /nicheTopics/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    // Topic version history — admin-only: it can contain unpublished drafts.
+    match /nicheTopicVersions/{id} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+    match /topicCategories/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    // Subcategory overrides (renames, ordering, enable/disable, custom subs).
+    // Public read: the explorer needs them to render the navigation tree.
+    match /topicSubcategories/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ---- Deny everything else ---------------------------------------------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

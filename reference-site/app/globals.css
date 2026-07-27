@@ -1,0 +1,503 @@
+﻿@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-sans: 'Inter', system-ui, sans-serif;
+    --font-serif: 'Lora', Georgia, serif;
+
+    /* ---- Button motion tokens -------------------------------------------
+       One easing vocabulary for the whole app, so ten different button
+       identities still feel like one product.
+         --btn-ease    standard decelerate — hover / colour
+         --btn-spring  overshoots slightly then settles — press release
+         --btn-dur     hover duration   (spec: 150–300ms)
+         --btn-press   click feedback   (spec: 80–150ms)                    */
+    --btn-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+    --btn-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --btn-dur: 220ms;
+    --btn-press: 110ms;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-white text-slate-800 antialiased;
+    font-feature-settings: 'ss01';
+    letter-spacing: -0.01em;
+  }
+  h1, h2, h3 {
+    @apply font-sans font-extrabold text-ink tracking-tight;
+    text-wrap: balance;
+  }
+}
+
+@layer components {
+  /* Layout */
+  .container-x {
+    @apply mx-auto w-full max-w-container px-5 sm:px-6 lg:px-8;
+  }
+  .section {
+    @apply py-16 sm:py-20 lg:py-24;
+  }
+
+  /* Buttons — pill radius (9999px) per the design tokens.
+     Transitions name their properties instead of using `transition-all`:
+     transform / box-shadow / background / color / border are all compositable,
+     so hover never triggers layout. See the motion layer below for the
+     per-identity effects (.btn-fx-*). */
+  .btn {
+    @apply relative inline-flex select-none items-center justify-center gap-2 overflow-hidden rounded-pill
+           px-6 py-3 text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2;
+    min-height: 44px;
+    transition:
+      transform var(--btn-dur) var(--btn-ease),
+      box-shadow var(--btn-dur) var(--btn-ease),
+      background-color var(--btn-dur) var(--btn-ease),
+      border-color var(--btn-dur) var(--btn-ease),
+      color var(--btn-dur) var(--btn-ease),
+      opacity var(--btn-dur) var(--btn-ease);
+    will-change: transform;
+    transition-property: transform, box-shadow, background-color, border-color, color, opacity;
+  }
+  .btn-primary {
+    @apply btn bg-teal text-white shadow-glow hover:bg-teal-dark focus-visible:ring-teal;
+  }
+  .btn-amber {
+    @apply btn bg-amber text-ink shadow-glow hover:bg-amber-dark hover:text-white focus-visible:ring-amber;
+  }
+  .btn-secondary {
+    @apply btn border border-slate-300 bg-white text-ink hover:border-ink hover:bg-slate-50 focus-visible:ring-slate-400;
+  }
+  .btn-ghost {
+    @apply btn text-ink hover:bg-slate-100 focus-visible:ring-slate-300;
+  }
+
+  /* Cards — 16px radius, soft purple-tinted shadow */
+  .card {
+    @apply rounded-card border border-slate-200 bg-white p-6 shadow-soft;
+  }
+
+  /* Pills / badges */
+  .badge {
+    @apply inline-flex items-center gap-1.5 rounded-pill bg-blush px-3 py-1 text-xs font-semibold text-violet;
+  }
+  .eyebrow {
+    @apply text-xs font-bold uppercase tracking-[0.14em] text-teal;
+  }
+
+  /* Admin form input (shared by admin managers) */
+  .cx-admin-input {
+    @apply w-full rounded-card border border-slate-300 bg-white px-3 py-2 text-sm text-ink focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/20;
+  }
+}
+
+/* ==========================================================================
+   BUTTON MOTION LAYER
+   --------------------------------------------------------------------------
+   Each `.btn-fx-*` gives a button category its own identity while sharing the
+   easing tokens above. Only transform / opacity / box-shadow / colour are
+   animated — all compositor properties, so nothing here triggers layout or
+   reflow.
+
+   Everything degrades to "no motion, same colours" under
+   prefers-reduced-motion (single block at the end of this layer).
+
+   Applied through `fx` on the shared Button/ActionButton components — do not
+   hand-roll a one-off hover effect on an individual button.
+   ========================================================================== */
+
+/* Shared: an icon marked .btn-ico leads or trails the label and reacts to the
+   parent's state. Kept in one place so every identity animates icons the same
+   structural way, only with a different personality. */
+.btn-ico {
+  display: inline-block;
+  transition: transform var(--btn-dur) var(--btn-ease);
+  will-change: transform;
+}
+
+/* Press feedback is universal: every button dips, then springs back. */
+.btn:not(:disabled):not([data-loading='true']):active {
+  transition-duration: var(--btn-press);
+  transform: scale(0.97);
+}
+
+/* ---- Default identities -------------------------------------------------
+   Coverage is by construction, not by remembering to tag 100+ call sites: a
+   filled brand button defaults to `sweep`, an outlined/ghost one to `lift`.
+   The `:not([class*='btn-fx-'])` guard means an explicit identity always wins,
+   so tagging a button is how you *differ* from the default, never how you opt
+   in to having motion at all.
+   -------------------------------------------------------------------------- */
+
+/* ---- 1. Primary CTA — gradient sweep + scale + glow + arrow slide -------- */
+.btn-fx-sweep::before,
+.btn-primary:not([class*='btn-fx-'])::before,
+.btn-amber:not([class*='btn-fx-'])::before,
+.cx-btn-primary:not([class*='btn-fx-'])::before,
+.cx-btn-gold:not([class*='btn-fx-'])::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 20%, rgba(255, 255, 255, 0.28) 50%, transparent 80%);
+  transform: translateX(-120%);
+  transition: transform 620ms var(--btn-ease);
+  pointer-events: none;
+}
+.btn-fx-sweep:not(:disabled):hover::before,
+.btn-primary:not([class*='btn-fx-']):not(:disabled):hover::before,
+.btn-amber:not([class*='btn-fx-']):not(:disabled):hover::before,
+.cx-btn-primary:not([class*='btn-fx-']):not(:disabled):hover::before,
+.cx-btn-gold:not([class*='btn-fx-']):not(:disabled):hover::before { transform: translateX(120%); }
+
+.btn-fx-sweep:not(:disabled):hover,
+.btn-primary:not([class*='btn-fx-']):not(:disabled):hover,
+.btn-amber:not([class*='btn-fx-']):not(:disabled):hover,
+.cx-btn-primary:not([class*='btn-fx-']):not(:disabled):hover,
+.cx-btn-gold:not([class*='btn-fx-']):not(:disabled):hover {
+  transform: scale(1.035);
+  box-shadow: 0 16px 34px -12px rgba(16, 80, 48, 0.55);
+}
+.btn-fx-sweep:not(:disabled):hover .btn-ico { transform: translateX(4px); }
+.btn-fx-sweep:not(:disabled):active { transform: scale(0.98); }
+/* Spring on release — the transform transition swaps to the overshoot curve. */
+.btn-fx-sweep:not(:disabled):not(:active):hover { transition-timing-function: var(--btn-spring); }
+
+/* ---- 2. Secondary — soft lift, border + background fade ------------------ */
+.btn-fx-lift:not(:disabled):hover,
+.btn-secondary:not([class*='btn-fx-']):not(:disabled):hover,
+.btn-ghost:not([class*='btn-fx-']):not(:disabled):hover,
+.cx-btn-ghost:not([class*='btn-fx-']):not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px -12px rgba(15, 23, 42, 0.35);
+}
+.btn-fx-lift:not(:disabled):active { transform: translateY(0) scale(0.985); }
+
+/* ---- 3. Success — green pulse + glow, checkmark morph on completion ------ */
+.btn-fx-success:not(:disabled):hover {
+  box-shadow: 0 0 0 3px rgba(16, 80, 48, 0.18), 0 12px 26px -14px rgba(16, 80, 48, 0.6);
+}
+.btn-fx-success[data-state='done'] { animation: btn-pulse 620ms var(--btn-ease); }
+.btn-fx-success[data-state='done'] .btn-ico {
+  animation: btn-check 420ms var(--btn-spring) both;
+}
+@keyframes btn-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(16, 80, 48, 0.5); }
+  70% { box-shadow: 0 0 0 12px rgba(16, 80, 48, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 80, 48, 0); }
+}
+@keyframes btn-check {
+  0% { transform: scale(0) rotate(-35deg); opacity: 0; }
+  60% { transform: scale(1.25) rotate(6deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+
+/* ---- 4. Danger — subtle shake, red glow, press depth --------------------- */
+.btn-fx-danger:not(:disabled):hover {
+  animation: btn-shake 420ms var(--btn-ease);
+  box-shadow: 0 0 0 3px rgba(190, 40, 40, 0.16), 0 12px 26px -14px rgba(190, 40, 40, 0.55);
+}
+.btn-fx-danger:not(:disabled):active { transform: translateY(1px) scale(0.97); }
+/* Armed = awaiting confirmation. A steady pulse, never a loop that nags. */
+.btn-fx-danger[data-state='armed'] { animation: btn-pulse-danger 900ms var(--btn-ease) infinite; }
+@keyframes btn-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-2px); }
+  40% { transform: translateX(2px); }
+  60% { transform: translateX(-1.5px); }
+  80% { transform: translateX(1.5px); }
+}
+@keyframes btn-pulse-danger {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(190, 40, 40, 0.45); }
+  50% { box-shadow: 0 0 0 8px rgba(190, 40, 40, 0); }
+}
+
+/* ---- 5. Icon button — rotate + scale, circular ripple origin ------------- */
+.btn-fx-icon:not(:disabled):hover { transform: scale(1.12); }
+.btn-fx-icon:not(:disabled):hover .btn-ico { transform: rotate(12deg) scale(1.06); }
+.btn-fx-icon:not(:disabled):active { transform: scale(0.94); }
+
+/* ---- 6. Navigation — sliding underline + elevation ----------------------- */
+.btn-fx-nav::after {
+  content: '';
+  position: absolute;
+  left: 1.25rem;
+  right: 1.25rem;
+  bottom: 0.45rem;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 260ms var(--btn-ease);
+  opacity: 0.75;
+}
+.btn-fx-nav:not(:disabled):hover::after,
+.btn-fx-nav[aria-current='page']::after { transform: scaleX(1); }
+.btn-fx-nav:not(:disabled):hover { transform: translateY(-1px); }
+
+/* ---- 7. Assessment step — arrow slide + progress-aware pulse ------------- */
+.btn-fx-step:not(:disabled):hover .btn-ico { transform: translateX(5px); }
+.btn-fx-step[data-dir='back']:not(:disabled):hover .btn-ico { transform: translateX(-5px); }
+.btn-fx-step:not(:disabled):hover { box-shadow: 0 12px 26px -14px rgba(16, 80, 48, 0.6); }
+/* Fires when a step becomes answerable, so "Next" announces itself once. */
+.btn-fx-step[data-ready='true'] { animation: btn-pulse 700ms var(--btn-ease); }
+
+/* ---- 8. AI — light-beam shimmer + orbiting glow --------------------------
+   Deliberately built from a sweeping highlight and an animated box-shadow
+   rather than a conic-gradient ring behind an opaque core: that construct has
+   to repaint the button's own background to hide its centre, which flattens
+   any gradient the button already has. This version composites over whatever
+   background the button brings. */
+.btn-fx-ai::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 25%, rgba(255, 255, 255, 0.42) 45%, rgba(208, 160, 48, 0.55) 55%, transparent 75%);
+  transform: translateX(-110%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 180ms var(--btn-ease);
+}
+.btn-fx-ai:not(:disabled):hover::before,
+.btn-fx-ai:focus-visible::before {
+  opacity: 1;
+  animation: btn-beam 1.5s var(--btn-ease) infinite;
+}
+.btn-fx-ai:not(:disabled):hover,
+.btn-fx-ai:focus-visible {
+  transform: scale(1.03);
+  animation: btn-aiglow 2.4s ease-in-out infinite;
+}
+@keyframes btn-beam {
+  0% { transform: translateX(-110%); }
+  100% { transform: translateX(110%); }
+}
+@keyframes btn-aiglow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(208, 160, 48, 0.45), 0 12px 30px -12px rgba(208, 160, 48, 0.5); }
+  50% { box-shadow: 0 0 0 5px rgba(208, 160, 48, 0), 0 16px 38px -12px rgba(208, 160, 48, 0.75); }
+}
+
+/* ---- 9. Booking — gold glow, float, icon bounce, magnetic pull ----------- */
+.btn-fx-book {
+  /* --mx/--my are written by ActionButton on pointer move (magnetic hover). */
+  transform: translate3d(calc(var(--mx, 0) * 1px), calc(var(--my, 0) * 1px), 0);
+}
+.btn-fx-book:not(:disabled):hover {
+  box-shadow: 0 18px 38px -14px rgba(208, 160, 48, 0.75);
+  transform: translate3d(calc(var(--mx, 0) * 1px), calc(var(--my, 0) * 1px - 2px), 0) scale(1.04);
+}
+.btn-fx-book:not(:disabled):hover .btn-ico { animation: btn-bounce 720ms var(--btn-ease) infinite; }
+@keyframes btn-bounce {
+  0%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-3px); }
+  70% { transform: translateY(-1px); }
+}
+
+/* ---- 10. Card action — lifts with its card, adds depth ------------------- */
+.group:hover .btn-fx-card { transform: translateY(-1px); box-shadow: 0 10px 20px -12px rgba(15, 23, 42, 0.4); }
+.btn-fx-card:not(:disabled):hover { transform: translateY(-2px) scale(1.02); }
+.btn-fx-card:not(:disabled):active { transform: translateY(0) scale(0.98); }
+
+/* ---- Click ripple (positioned by ActionButton from the pointer) ---------- */
+.btn-ripple {
+  position: absolute;
+  border-radius: 9999px;
+  transform: scale(0);
+  background: rgba(255, 255, 255, 0.45);
+  pointer-events: none;
+  animation: btn-ripple 560ms var(--btn-ease) forwards;
+}
+.btn-ripple-dark { background: rgba(10, 46, 30, 0.22); }
+@keyframes btn-ripple {
+  to { transform: scale(2.6); opacity: 0; }
+}
+
+/* ---- Loading state ------------------------------------------------------- */
+.btn[data-loading='true'] { cursor: progress; pointer-events: none; }
+.btn[data-loading='true'] .btn-label { opacity: 0.55; }
+.btn-spinner {
+  width: 1em;
+  height: 1em;
+  border-radius: 9999px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  animation: btn-spin 720ms linear infinite;
+  flex: none;
+}
+@keyframes btn-spin { to { transform: rotate(1turn); } }
+
+/* ---- Reduced motion: keep every state change, drop every movement -------- */
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .btn-ico,
+  .btn-fx-nav::after,
+  .btn-fx-sweep::before { transition-duration: 1ms !important; }
+  .btn:hover,
+  .btn:active,
+  .btn-fx-sweep:hover,
+  .btn-fx-lift:hover,
+  .btn-fx-icon:hover,
+  .btn-fx-nav:hover,
+  .btn-fx-book:hover,
+  .btn-fx-card:hover,
+  .group:hover .btn-fx-card,
+  .btn-fx-ai:hover { transform: none !important; }
+  .btn-fx-sweep:hover::before { transform: translateX(-120%) !important; }
+  .btn-ico,
+  .btn-fx-danger:hover,
+  .btn-fx-ai::before,
+  .btn-fx-success[data-state='done'],
+  .btn-fx-danger[data-state='armed'],
+  .btn-fx-step[data-ready='true'],
+  .btn-fx-book:hover .btn-ico,
+  .btn-ripple,
+  .btn-spinner { animation: none !important; }
+  /* The spinner still needs to read as "busy" without spinning. */
+  .btn-spinner { border-top-color: currentColor; opacity: 0.5; }
+  .btn-ripple { display: none; }
+}
+
+/* ==========================================================================
+   AI Niche Finder — self-contained premium design system.
+   Scoped under [data-cx-theme] with CSS variables so the module supports
+   dark/light without affecting the rest of the site. Brand: green #105030,
+   gold #d0a030.
+   ========================================================================== */
+[data-cx-theme] {
+  --cx-brand: #105030;
+  --cx-brand-soft: #1c6b43;
+  --cx-gold: #d0a030;
+  --cx-gold-soft: #e3bd5e;
+  --cx-radius: 20px;
+  color: var(--cx-text);
+}
+[data-cx-theme='light'] {
+  --cx-bg: #eef4f1;
+  --cx-bg-2: #e2ede8;
+  --cx-text: #0a2e1e;
+  --cx-muted: #4b6a5c;
+  --cx-surface: rgba(255, 255, 255, 0.72);
+  --cx-surface-solid: #ffffff;
+  --cx-glass-border: rgba(16, 80, 48, 0.14);
+  --cx-shadow: 0 20px 45px -20px rgba(10, 46, 30, 0.35);
+  --cx-track: rgba(16, 80, 48, 0.12);
+}
+[data-cx-theme='dark'] {
+  --cx-bg: #06110c;
+  --cx-bg-2: #0a1f16;
+  --cx-text: #eaf3ee;
+  --cx-muted: #9db6aa;
+  --cx-surface: rgba(18, 40, 30, 0.55);
+  --cx-surface-solid: #0e2419;
+  --cx-glass-border: rgba(224, 189, 94, 0.16);
+  --cx-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.7);
+  --cx-track: rgba(234, 243, 238, 0.12);
+}
+
+.cx-root {
+  position: relative;
+  min-height: 100vh;
+  background:
+    radial-gradient(60% 55% at 15% 0%, rgba(16, 80, 48, 0.22), transparent 60%),
+    radial-gradient(50% 50% at 95% 10%, rgba(208, 160, 48, 0.18), transparent 55%),
+    linear-gradient(180deg, var(--cx-bg), var(--cx-bg-2));
+  color: var(--cx-text);
+  overflow-x: hidden;
+}
+.cx-glass {
+  background: var(--cx-surface);
+  border: 1px solid var(--cx-glass-border);
+  border-radius: var(--cx-radius);
+  box-shadow: var(--cx-shadow);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+}
+.cx-muted { color: var(--cx-muted); }
+.cx-brandtext {
+  background: linear-gradient(100deg, var(--cx-brand-soft), var(--cx-gold));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+/* `.cx-btn` opts into the shared BUTTON MOTION LAYER above: position/overflow
+   are what the `.btn-fx-*` pseudo-elements need, so the immersive theme reuses
+   the same identities instead of carrying a second copy of them. */
+.cx-btn {
+  position: relative; overflow: hidden; user-select: none;
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  border-radius: 9999px; padding: 0.75rem 1.5rem; font-weight: 700; font-size: 0.9rem;
+  min-height: 46px;
+  transition:
+    transform var(--btn-dur) var(--btn-ease),
+    box-shadow var(--btn-dur) var(--btn-ease),
+    background var(--btn-dur) var(--btn-ease),
+    border-color var(--btn-dur) var(--btn-ease),
+    opacity var(--btn-dur) var(--btn-ease);
+  will-change: transform;
+  cursor: pointer; border: 1px solid transparent;
+}
+.cx-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+/* Plain hover for bare `.cx-btn`s — the branded variants are already covered
+   by the default sweep/lift identities in the motion layer above, so they are
+   excluded here to keep this rule from winning on source order. */
+.cx-btn:not([class*='btn-fx-']):not(.cx-btn-primary):not(.cx-btn-gold):not(.cx-btn-ghost):not(:disabled):hover {
+  transform: translateY(-1px);
+}
+.cx-btn:not(:disabled):not([data-loading='true']):active {
+  transition-duration: var(--btn-press);
+  transform: scale(0.97);
+}
+.cx-btn[data-loading='true'] { cursor: progress; pointer-events: none; }
+
+.cx-btn-primary { background: linear-gradient(100deg, var(--cx-brand), var(--cx-brand-soft)); color: #fff; box-shadow: 0 10px 26px -10px rgba(16, 80, 48, 0.7); }
+.cx-btn-gold { background: linear-gradient(100deg, var(--cx-gold), var(--cx-gold-soft)); color: #23180a; box-shadow: 0 10px 26px -10px rgba(208, 160, 48, 0.7); }
+.cx-btn-ghost { background: transparent; border-color: var(--cx-glass-border); color: var(--cx-text); }
+.cx-btn-ghost:hover { background: var(--cx-surface); }
+.cx-chip {
+  display: inline-flex; align-items: center; gap: 0.4rem; border-radius: 9999px;
+  padding: 0.3rem 0.75rem; font-size: 0.72rem; font-weight: 600;
+  background: var(--cx-track); color: var(--cx-text);
+}
+.cx-focus:focus-visible { outline: 2px solid var(--cx-gold); outline-offset: 2px; }
+
+/* Option cards (single / multi / multiSelect) */
+.cx-option {
+  display: flex; align-items: flex-start; gap: 0.75rem; width: 100%; text-align: left;
+  border-radius: 14px; padding: 1rem; cursor: pointer; transition: all 0.15s ease;
+  background: var(--cx-surface); border: 1px solid var(--cx-glass-border); color: var(--cx-text);
+}
+.cx-option:hover { border-color: var(--cx-brand-soft); transform: translateY(-1px); }
+.cx-option[aria-pressed='true'], .cx-option[data-active='true'] {
+  border-color: var(--cx-brand); box-shadow: 0 0 0 2px var(--cx-brand) inset, 0 10px 24px -14px rgba(16, 80, 48, 0.8);
+  background: linear-gradient(180deg, rgba(16, 80, 48, 0.14), transparent);
+}
+
+/* Animations */
+@keyframes cx-fade-up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes cx-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes cx-spin { to { transform: rotate(360deg); } }
+@keyframes cx-shimmer { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }
+@keyframes cx-ring { to { stroke-dashoffset: var(--cx-ring-target); } }
+.cx-fade-up { animation: cx-fade-up 0.5s ease both; }
+.cx-float { animation: cx-float 6s ease-in-out infinite; }
+.cx-spin { animation: cx-spin 1s linear infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .cx-fade-up, .cx-float, .cx-spin { animation: none !important; }
+  .cx-btn:hover, .cx-btn:active, .cx-option:hover { transform: none !important; }
+  .cx-btn { transition-duration: 1ms !important; }
+}
+
+/* Print / "Download PDF" — force a clean, light, chrome-free report. */
+@media print {
+  header, footer, .cx-noprint { display: none !important; }
+  .cx-root {
+    background: #fff !important;
+    --cx-text: #0a2e1e; --cx-muted: #4b6a5c; --cx-track: #eef4f1;
+    --cx-surface: #fff; --cx-glass-border: #d9e6df;
+  }
+  .cx-glass { box-shadow: none !important; border: 1px solid #d9e6df !important; backdrop-filter: none !important; break-inside: avoid; }
+  .cx-fade-up { animation: none !important; }
+  @page { margin: 14mm; }
+}
