@@ -1,7 +1,7 @@
 ﻿import Link from 'next/link';
 import Image from 'next/image';
 import { Button, Container, Section, SectionHeading, Badge } from './ui';
-import { stats, logos, features, processSteps, programs, stories, img, type Program } from '@/lib/site';
+import { stats, logos, features, processSteps, programs, stories, revenueProof, img, type Program } from '@/lib/site';
 import { listPublishedPrograms } from '@/lib/cms/store';
 
 /** Hero content (editable via the CMS; falls back to these defaults). */
@@ -294,6 +294,8 @@ export async function ProgramCards({ limit }: { limit?: number } = {}) {
 
 /** Testimonials (fictional). */
 export function Testimonials() {
+  const featured = stories.find((s) => s.video);
+
   return (
     <Section className="bg-slate-50">
       <SectionHeading eyebrow="Testimonials" title="Results from the tribe" lead="Real member results. Quotes are placeholders — swap in their own words." />
@@ -311,6 +313,37 @@ export function Testimonials() {
           </figure>
         ))}
       </div>
+
+      {featured?.video && (
+        <figure className="mx-auto mt-12 max-w-2xl">
+          <figcaption className="mb-3 text-center text-sm font-bold uppercase tracking-wide text-slate-500">
+            Video testimonial — {featured.name}, {featured.role}
+          </figcaption>
+          {/* preload="none": 4 MB is still real bandwidth, so don't fetch it until played. */}
+          <video controls preload="none" playsInline className="w-full rounded-card border border-slate-200 shadow-sm">
+            <source src={featured.video} type="video/mp4" />
+            Your browser cannot play this video.
+          </video>
+        </figure>
+      )}
+
+      <div className="mt-12">
+        <h3 className="text-center text-sm font-bold uppercase tracking-wide text-slate-500">Revenue screenshots from the tribe</h3>
+        <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+          {revenueProof.map((p) => (
+            <Image
+              key={p.src}
+              src={p.src}
+              alt={p.alt}
+              width={1080}
+              height={1080}
+              sizes="(min-width: 1024px) 20vw, (min-width: 640px) 33vw, 50vw"
+              className="rounded-card border border-slate-200 object-cover shadow-sm"
+            />
+          ))}
+        </div>
+      </div>
+
       <div className="mt-10 text-center">
         <Button href="/stories" variant="ghost">
           Read more stories →

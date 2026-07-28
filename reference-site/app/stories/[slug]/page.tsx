@@ -47,6 +47,14 @@ export default async function StoryPage({ params }: { params: Promise<{ slug: st
             “{story.quote}”
           </blockquote>
 
+          {story.video && (
+            /* preload="none": 4 MB is still real bandwidth, so don't fetch it until played. */
+            <video controls preload="none" playsInline className="mt-8 w-full rounded-card border border-slate-200 shadow-sm">
+              <source src={story.video} type="video/mp4" />
+              Your browser cannot play this video.
+            </video>
+          )}
+
           <div className="mt-6 space-y-4 text-slate-600">
             <p>
               <strong className="text-ink">Placeholder story.</strong> This route is fully wired — swap in {story.name}

@@ -164,17 +164,39 @@ export const tools: Tool[] = [
   { slug: 'content-planner', name: 'Content Planner', blurb: 'Plan zero-rupee content that attracts leads.', tag: 'Worksheet' },
 ];
 
-export type Story = { slug: string; name: string; role: string; result: string; quote: string };
+export type Story = {
+  slug: string;
+  name: string;
+  role: string;
+  result: string;
+  quote: string;
+  /** Video testimonial served from `public/testimonials/`. Optional — most stories have none. */
+  video?: string;
+};
 
 // Real member names/results from the brand; quotes are placeholders — replace with real ones.
 export const stories: Story[] = [
   { slug: 'rajkamal', name: 'Rajkamal', role: 'SkilxNation', result: '₹10 Lakhs revenue', quote: 'The framework gave me a predictable system to grow.' },
-  { slug: 'anusha', name: 'Anusha', role: 'Glorious', result: '₹10 Lakhs revenue', quote: 'I finally have a clear path from leads to paying clients.' },
+  { slug: 'anusha', name: 'Anusha', role: 'Glorious', result: '₹10 Lakhs revenue', quote: 'I finally have a clear path from leads to paying clients.', video: '/testimonials/anusha-revenue.mp4' },
   { slug: 'annamalai', name: 'Annamalai', role: 'Dream Zone', result: '₹15 Lakhs revenue', quote: 'Predictable revenue changed how I run my business.' },
   { slug: 'member-4', name: 'Member Name', role: 'Coaching business', result: 'Placeholder result', quote: 'Replace with a real member testimonial.' },
   { slug: 'member-5', name: 'Member Name', role: 'Coaching business', result: 'Placeholder result', quote: 'Replace with a real member testimonial.' },
   { slug: 'member-6', name: 'Member Name', role: 'Coaching business', result: 'Placeholder result', quote: 'Replace with a real member testimonial.' },
 ];
+
+/**
+ * Revenue screenshots supplied by the brand, served from `public/testimonials/`.
+ *
+ * Deliberately NOT tied to a named member: the source files arrived as a single
+ * unlabelled set, and pinning one to a person would be inventing a claim about
+ * that person's earnings. They render as a proof strip instead.
+ */
+export type RevenueProof = { src: string; alt: string };
+
+export const revenueProof: RevenueProof[] = [1, 2, 3, 4, 5].map((n) => ({
+  src: `/testimonials/revenue-${n}.jpg`,
+  alt: `Member revenue screenshot ${n}`,
+}));
 
 export type Guide = { slug: string; title: string; excerpt: string; minutes: number };
 

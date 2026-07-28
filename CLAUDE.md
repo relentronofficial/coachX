@@ -9,7 +9,7 @@ Two **independent** npm projects (no root workspace/package.json — each has it
 - **`reference-site/`** — Next.js 15 (App Router) + React 19 + Tailwind v3 coaching-community site with a full admin CMS, auth, and assessment tools. This is where feature work happens.
 - **`tools/site-analyzer/`** — Standalone Node/TypeScript crawler (Crawlee + Playwright) that inventories a target website into `output/`. Its crawl results (`output/design-system.json`, routes, components) were the *provenance* for `reference-site`'s design tokens and information architecture. See `tools/site-analyzer/README.md` for the deep dive and the legal/boundary rules.
 
-The tree **is** a git repository (single `.git` at the root covering both projects; branch `main`, pushed to `origin` = `github.com/tbttech01-cyber/coachx`), so `git diff` / `git log` / `git checkout --` all work. History is short and squashed — three commits, of which the first is the entire app — so `git blame` will rarely explain *why* something is the way it is. This file and the long-form docs are the real provenance.
+The tree **is** a git repository (single `.git` at the root covering both projects; branch `main`, pushed to `origin` = `github.com/tbttech01-cyber/coachx`), so `git diff` / `git log` / `git checkout --` all work. History is short and squashed — a handful of commits, of which the first is the entire app — so `git blame` will rarely explain *why* something is the way it is. This file and the long-form docs are the real provenance.
 
 ⚠️ **The `.gitignore`s are live, and three pieces of real working state sit outside version control** — `git checkout` cannot restore them and they exist on no other machine:
 - `reference-site/.data/*.json` — every user, submission, lead, role and CMS edit (see *Data persistence* below). Deleting one is permanent data loss, not a resettable fixture.
@@ -17,16 +17,28 @@ The tree **is** a git repository (single `.git` at the root covering both projec
 - `tools/site-analyzer/output/` — the crawl results that were the provenance for the site's design tokens; regenerating them means re-crawling a third-party site.
 
 ### Brand assets
-The two root-level `.png` files are **brand source assets, not scratch** — they're the originals of the copies the app actually serves from `reference-site/public/brand/`:
+Every root-level media file is a **brand source asset, not scratch** — the originals of the copies the app actually serves out of `reference-site/public/`:
 
 | Root original | Served as | Used by |
 | --- | --- | --- |
 | `Black - CoachX.png` | `public/brand/coachx-logo.png` | `components/Logo.tsx` — the CoachX wordmark, native 1617×444 (≈3.64:1). Also the source of the brand palette in `tailwind.config.ts`. |
 | `sakthi anna pic.png` | `public/brand/founder.png` | Founder portrait |
+| `anusha-revenue.mp4` | `public/testimonials/anusha-revenue.mp4` (**re-encoded**, see below) | `Story.video` on the `anusha` entry in `lib/site.ts` → rendered by `Testimonials()` and `app/stories/[slug]/page.tsx` |
+| `revenue-1 (1..5).jpg` | `public/testimonials/revenue-{1..5}.jpg` | `revenueProof` in `lib/site.ts` → the proof strip in `Testimonials()` |
 
 Re-export the logo from the root original rather than upscaling the served copy, and keep the two in sync (`Logo.tsx` hardcodes the aspect ratio, so a re-crop means updating that ratio too). `reference-site/devserver.log`, `test-results/`, and `tsconfig.tsbuildinfo` *are* scratch.
 
-The other root-level media — `anusha-revenue.mp4` and `revenue-1 (1..5).jpg` — are **committed but referenced by nothing**: no import, no `public/` copy, no markup. They relate to the `anusha` testimonial in `lib/site.ts` (which renders text only). Treat them as raw source awaiting use, not as dead files to clean up.
+Two things about the testimonial media specifically:
+- **The served video is a re-encode, not a copy.** The root original is 1080×1920 / 25 fps / **7.5 Mbps → 29.5 MB**, which is far more than the web needs (it renders in a `max-w-2xl` ≈ 672 px column). The served copy is 720×1280 CRF 26 → **4.2 MB**, a ~7× cut with no visible loss — the burned-in "10 LAKHS REVENUE" caption stays crisp, which is the constraint that rules out anything more aggressive. It is a talking head over an animated gold-glitter background, and that glitter is what makes the file expensive: at 1080p even CRF 27 only reached 7 MB, so **dropping resolution beats raising CRF here**. Regenerate from the root original, never from the served copy:
+  ```bash
+  ffmpeg -i "anusha-revenue.mp4" -vf "scale=720:1280:flags=lanczos" \
+    -c:v libx264 -preset slow -crf 26 -profile:v high -pix_fmt yuv420p \
+    -c:a aac -b:a 128k -movflags +faststart \
+    reference-site/public/testimonials/anusha-revenue.mp4
+  ```
+  `+faststart` matters — it moves the moov atom to the front so the video streams progressively instead of needing a full download. Both `<video>` tags also set `preload="none"` deliberately; without it every visitor fetches the file on page load. `public/` is `COPY`d into the Cloud Run image, so this size is per-build weight — if it ever needs to leave the image entirely, move it to Cloud Storage / a CDN rather than dropping these attributes.
+- **The served `revenue-*.jpg` are full-resolution on purpose.** They look oversized next to the video, but `next/image` needs a high-res source to build its `srcSet` from (1080 px source → ~56 KB at 640w). Downscaling the served copies would degrade every generated variant, so leave them alone.
+- **`revenueProof` is deliberately not attributed to any named member.** The screenshots arrived as one unlabelled set, so pinning one to a person would invent a claim about their earnings. Keep them a generic proof strip; don't "improve" the alt text into a specific member's revenue.
 
 Long-form docs worth reading before touching their area: `reference-site/AI-NICHE-FINDER.md` (the AI Niche Finder's schema, engine, admin and flow), `reference-site/TOOLS-AUDIT.md` (assessment-tool inventory + provenance), `tools/site-analyzer/README.md` (crawler boundaries).
 
