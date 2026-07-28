@@ -6,10 +6,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Two **independent** npm projects (no root workspace/package.json — each has its own `package.json` and `node_modules`). Always `cd` into the project before running commands.
 
-⚠️ **This tree is not a git repository** — there is no `.git` anywhere, so there is no `git diff` to review against, no history to blame, and no `git checkout --` to undo a bad edit. Edits are irreversible. Both projects *have* `.gitignore` files written in anticipation of one; they are currently inert (notably `.data/` and `.env*`, which are live working state here, not ignored artifacts).
-
 - **`reference-site/`** — Next.js 15 (App Router) + React 19 + Tailwind v3 coaching-community site with a full admin CMS, auth, and assessment tools. This is where feature work happens.
 - **`tools/site-analyzer/`** — Standalone Node/TypeScript crawler (Crawlee + Playwright) that inventories a target website into `output/`. Its crawl results (`output/design-system.json`, routes, components) were the *provenance* for `reference-site`'s design tokens and information architecture. See `tools/site-analyzer/README.md` for the deep dive and the legal/boundary rules.
+
+The tree **is** a git repository (single `.git` at the root covering both projects; branch `main`, pushed to `origin` = `github.com/tbttech01-cyber/coachx`), so `git diff` / `git log` / `git checkout --` all work. History is short and squashed — three commits, of which the first is the entire app — so `git blame` will rarely explain *why* something is the way it is. This file and the long-form docs are the real provenance.
+
+⚠️ **The `.gitignore`s are live, and three pieces of real working state sit outside version control** — `git checkout` cannot restore them and they exist on no other machine:
+- `reference-site/.data/*.json` — every user, submission, lead, role and CMS edit (see *Data persistence* below). Deleting one is permanent data loss, not a resettable fixture.
+- `reference-site/.env.local` — the live Firebase credentials, not reproducible from `.env.example`.
+- `tools/site-analyzer/output/` — the crawl results that were the provenance for the site's design tokens; regenerating them means re-crawling a third-party site.
 
 ### Brand assets
 The two root-level `.png` files are **brand source assets, not scratch** — they're the originals of the copies the app actually serves from `reference-site/public/brand/`:
@@ -20,6 +25,8 @@ The two root-level `.png` files are **brand source assets, not scratch** — the
 | `sakthi anna pic.png` | `public/brand/founder.png` | Founder portrait |
 
 Re-export the logo from the root original rather than upscaling the served copy, and keep the two in sync (`Logo.tsx` hardcodes the aspect ratio, so a re-crop means updating that ratio too). `reference-site/devserver.log`, `test-results/`, and `tsconfig.tsbuildinfo` *are* scratch.
+
+The other root-level media — `anusha-revenue.mp4` and `revenue-1 (1..5).jpg` — are **committed but referenced by nothing**: no import, no `public/` copy, no markup. They relate to the `anusha` testimonial in `lib/site.ts` (which renders text only). Treat them as raw source awaiting use, not as dead files to clean up.
 
 Long-form docs worth reading before touching their area: `reference-site/AI-NICHE-FINDER.md` (the AI Niche Finder's schema, engine, admin and flow), `reference-site/TOOLS-AUDIT.md` (assessment-tool inventory + provenance), `tools/site-analyzer/README.md` (crawler boundaries).
 
@@ -36,11 +43,12 @@ npm run test:watch
 npx vitest run tests/unit/engine.test.ts   # single unit test file
 npm run test:e2e         # playwright — REQUIRES a production build first (npm run build)
 npx playwright test niche-finder-ai        # single e2e spec
+bash deploy-cloud-run.sh # build + deploy to Cloud Run (see Deployment below)
 ```
 
 Playwright (`playwright.config.ts`) spins up `npm start` on **:3100** itself. Unit tests live in `tests/unit/`, E2E in `tests/e2e/`. The `@/` import alias maps to the `reference-site/` root (configured in both `tsconfig.json` and `vitest.config.ts`).
 
-Both gates are currently green: `npx tsc --noEmit` exits clean, and `npm test` is **120 tests across 12 files**. Treat a failure as something you introduced. The app suite runs every non-Firebase spec twice — once per device project, `chromium` (Desktop Chrome) and `mobile` (Pixel 5) — so `npx playwright test niche-finder-ai` is two runs, and `--project=chromium` halves it while you iterate.
+Both gates are currently green: `npx tsc --noEmit` exits clean, and `npm test` is **199 tests across 16 files**. Treat a failure as something you introduced. The app suite runs every non-Firebase spec twice — once per device project, `chromium` (Desktop Chrome) and `mobile` (Pixel 5) — so `npx playwright test niche-finder-ai` is two runs, and `--project=chromium` halves it while you iterate.
 
 On Windows, `npm run build` while `npm run dev` is running fights over `.next` — stop the dev server first, or expect a corrupted dev build.
 
@@ -51,7 +59,7 @@ On Windows, `npm run build` while `npm run dev` is running fights over `.next` �
 **There are zero `test.skip`s in the suite.** Live-backend tests live in `tests/e2e/firebase.spec.ts` and run as the dedicated `firebase` Playwright project, which `playwright.config.ts` registers *only* when real credentials are present (it warns loudly otherwise). Don't "fix" a red Firebase run by adding skips — the point of that design is that the suite never reports green for something it couldn't reach. **Credentials are now present** (see below), so that project *does* register and `npm run test:e2e` will register users and write documents against the real project. Prefer `--project=chromium` unless you mean to touch the live backend.
 
 ### Environment & Firebase
-`.env.example` documents everything (copy to `.env.local`): `AUTH_SECRET` (signs the session JWT), `ADMIN_EMAILS` (comma-separated; unset ⇒ dev fallback treats any `admin@…` address as admin), the six `NEXT_PUBLIC_FIREBASE_*` values, and `NEXT_PUBLIC_FIREBASE_STORAGE_ENABLED`. `RESEND_API_KEY` is optional (email; falls back to a file outbox) and is deliberately *not* in `.env.example`.
+`.env.example` documents most of it (copy to `.env.local`): `AUTH_SECRET` (signs the session JWT), `ADMIN_EMAILS` (comma-separated; unset ⇒ dev fallback treats any `admin@…` address as admin), the six `NEXT_PUBLIC_FIREBASE_*` values, and `NEXT_PUBLIC_FIREBASE_STORAGE_ENABLED`. Two live variables are **not** in it: `RESEND_API_KEY` (optional email; falls back to a file outbox) is omitted deliberately, and `NEXT_PUBLIC_SITE_URL` (canonical origin — see *SEO & canonical origin*) is simply undocumented, though `Dockerfile`, `cloudbuild.yaml` and `deploy-cloud-run.sh` all read it.
 
 **`reference-site/.env.local` exists and is populated** — a real Firebase project is connected, so Firestore/Auth code paths run live rather than falling back. It is untracked-by-intent and not reproducible from `.env.example`; never overwrite or "regenerate" it. `FIREBASE-SETUP.md` is the runbook. Deployable config lives in `firebase.json`, `firestore.rules`, `firestore.indexes.json`, `storage.rules`. Useful commands:
 
@@ -66,6 +74,17 @@ npm run test:e2e:firebase      # the live-backend E2E project
 **The whole app must work with no Firebase env at all.** `lib/firebase.ts` exports `isFirebaseConfigured`, and every Firestore call site checks it and falls back to in-code seed data / `localStorage` / file-backed JSON. Preserve this when adding Firestore reads or writes — a missing project degrades, never throws. The module also initialises with non-empty *placeholder* config when env is absent, specifically so `getAuth`/`getFirestore` don't throw at import and break SSR — which means an unguarded call fails at the network round-trip, not loudly at startup. That's why the `isFirebaseConfigured` check is the guard, not a try/catch.
 
 **Cloud Storage is a second, independent gate.** `lib/firebase.ts` also exports `isStorageConfigured` (= `isFirebaseConfigured && NEXT_PUBLIC_FIREBASE_STORAGE_ENABLED !== 'false'`), because a Storage bucket needs the paid Blaze plan while Auth and Firestore are free on Spark. **The connected project sets `…STORAGE_ENABLED=false`** — so uploads/photos are expected to degrade, `firebase-verify` reports that requirement as *skipped* rather than failed, and a genuinely broken upload path can hide behind it. Guard upload UIs and helpers on `isStorageConfigured`, never on `isFirebaseConfigured`.
+
+### Deployment — Google Cloud Run
+`Dockerfile` (multi-stage, ships `.next/standalone`) + `cloudbuild.yaml` + `deploy-cloud-run.sh`, documented in `DEPLOY-CLOUD-RUN.md`. Deploy with `bash deploy-cloud-run.sh` from `reference-site/` (needs `gcloud` auth + a billing-enabled project; Docker is not required — Cloud Build builds the image). Defaults: region `asia-south1`, service `coachx`, overridable by env var. `next.config.mjs` sets `output: 'standalone'` **for this** — don't remove it.
+
+Two things drive most of the design here, and both are easy to break:
+
+1. **`NEXT_PUBLIC_*` are build args, not runtime env.** Next inlines them into the client bundle during `next build`, so setting them only on the Cloud Run service ships a bundle carrying placeholder Firebase config and every client call fails. They flow `.env.local` → `deploy-cloud-run.sh` → Cloud Build substitutions → `--build-arg` → `ARG`/`ENV` in the Dockerfile. **Adding a `NEXT_PUBLIC_*` variable means adding it in all four places**, and changing a value needs a rebuild, not a redeploy. Server-only secrets (`AUTH_SECRET`, `ADMIN_EMAILS`) are runtime env vars and never enter the image.
+2. **The file-backed stores do not survive there.** Cloud Run's filesystem is a per-instance in-memory tmpfs, wiped on every restart and unshared between instances — so accounts, submissions and CMS edits made in production are lost on the next revision or scale-to-zero. `deploy-cloud-run.sh` pins `--max-instances 1` to at least make it consistent. A deployment is **read-only in practice** until those eight modules move to Firestore (which is a rewrite of the store internals only — the route/guard layers never touch the filesystem).
+
+### SEO & canonical origin
+`brand.url` in `lib/site.ts` (`NEXT_PUBLIC_SITE_URL` || `https://coachx.tamilbusinesstribe.com`) is the single canonical origin — `metadataBase`, canonical links, Open Graph, `app/sitemap.ts` and `app/robots.ts` all derive from it, so a domain move is one edit. `app/sitemap.ts` builds its URLs from the same sources the pages render from (CMS programs with the static catalog as fallback, `engineTools`, guides/stories/events) so it can't drift from what exists; `app/robots.ts`'s disallow list mirrors what the sitemap omits (admin, auth, `/profile`, `/api/`, `/book-strategy-call`). **Adding a public route means adding it to the sitemap; adding a gated one means adding it to both middleware and robots.** `app/manifest.ts` + `app/icon.png` / `apple-icon.png` / `public/icon-{192,512}.png` cover the PWA/icon side, also fed from `lib/site.ts`.
 
 ## site-analyzer — commands
 
@@ -82,7 +101,7 @@ npm run clean            # wipe Crawlee's storage/ for a fresh run
 ## reference-site — architecture
 
 ### Data persistence (no database)
-All server state is **file-backed JSON under `reference-site/.data/`** (`users.json`, `cms.json`, `roles.json`, `submissions.json`, `leads.json`, `audit.json`, `reset-tokens.json`). Stores (`lib/auth/users.ts`, `lib/cms/store.ts`, `lib/auth/rolesStore.ts`, …) follow one pattern: read-all → mutate → write-all, serialized through an in-process `withLock` promise chain to avoid lost updates. This is deliberately swappable — replace the store internals with a real DB without touching the route/guard layers above them.
+All server state is **file-backed JSON under `reference-site/.data/`** (`users.json`, `cms.json`, `roles.json`, `submissions.json`, `leads.json`, `audit.json`, `reset-tokens.json`, plus `niche-emails.json` — the email outbox `lib/nicheAI/email.server.ts` falls back to when `RESEND_API_KEY` is absent). Stores (`lib/auth/users.ts`, `lib/cms/store.ts`, `lib/auth/rolesStore.ts`, …) follow one pattern: read-all → mutate → write-all, serialized through an in-process `withLock` promise chain to avoid lost updates. This is deliberately swappable — replace the store internals with a real DB without touching the route/guard layers above them.
 
 ### Authentication — dual, with a JWT bridge
 There are **two** auth paths that converge on one session cookie:
