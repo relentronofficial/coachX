@@ -87,10 +87,37 @@ export function AuthProvider({ initialUser = null, children }: { initialUser?: A
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const persistenceSet = useRef(false);
+  /**
+   * Auth transitions race in three ways, and all three are guarded here:
+   *  - `authOp` — bumped by every transition. A hydrate that loses the race
+   *    (typically to a logout) must not publish its stale user.
+   *  - `signingOut` — true from the start of logout() until the cookie is
+   *    actually gone, so the listener below doesn't restore the session from a
+   *    cookie that is milliseconds from being cleared.
+   *  - `pendingSync` — the in-flight cookie mint, so logout can let it settle
+   *    before clearing rather than racing it.
+   */
+  const authOp = useRef(0);
+  const signingOut = useRef(false);
+  const pendingSync = useRef<Promise<void> | null>(null);
 
   const hydrate = useCallback(async (fbUser: FirebaseUser) => {
+    const op = ++authOp.current;
     const prof = await getUserProfile(fbUser.uid).catch(() => null);
     const role: Role = prof?.role ?? 'user';
+
+    // Mint the server cookie BEFORE publishing signed-in state. That cookie is
+    // what middleware enforces, so setting `user` first opened a window where
+    // the header said "logged in" while every guarded route still saw a guest —
+    // registering and going straight to /profile bounced you back to /login.
+    const sync = syncServerSession(fbUser);
+    pendingSync.current = sync;
+    await sync;
+
+    // A newer transition (usually logout) started while we were minting; that
+    // one owns the state now, so publishing here would resurrect a dead session.
+    if (op !== authOp.current) return;
+
     setProfile(prof);
     setUser({
       uid: fbUser.uid,
@@ -98,7 +125,6 @@ export function AuthProvider({ initialUser = null, children }: { initialUser?: A
       name: fbUser.displayName ?? prof?.fullName ?? (fbUser.email ?? '').split('@')[0],
       role,
     });
-    await syncServerSession(fbUser);
   }, []);
 
   useEffect(() => {
@@ -129,8 +155,15 @@ export function AuthProvider({ initialUser = null, children }: { initialUser?: A
       if (!active) return;
       if (fbUser) {
         await hydrate(fbUser);
+      } else if (signingOut.current) {
+        // Mid-logout: signOut() fires this listener before the cookie is
+        // cleared, so consulting the bridge here would read the session we are
+        // in the middle of ending and immediately restore it.
+        setUser(null);
+        setProfile(null);
       } else {
-        // No Firebase user — fall back to the server session cookie (bridge).
+        // No Firebase user — fall back to the server session cookie (bridge),
+        // which is how the legacy file-backed login stays signed in.
         const server = await fetchServerSession();
         if (server) {
           setUser(server);
@@ -192,10 +225,20 @@ export function AuthProvider({ initialUser = null, children }: { initialUser?: A
   }, [hydrate]);
 
   const logout = useCallback(async () => {
-    await signOut(auth).catch(() => undefined);
+    authOp.current++; // any hydrate still in flight is now stale
+    signingOut.current = true;
     setUser(null);
     setProfile(null);
-    await clearServerSession();
+    try {
+      await signOut(auth).catch(() => undefined);
+      // Let a cookie mint that was already in flight finish first — otherwise it
+      // lands *after* the clear below and silently signs the user back in on the
+      // next page load.
+      await pendingSync.current?.catch(() => undefined);
+      await clearServerSession();
+    } finally {
+      signingOut.current = false;
+    }
   }, []);
 
   const forgotPassword = useCallback(async (email: string) => {
