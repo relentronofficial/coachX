@@ -1,0 +1,33 @@
+# Cloud Build config — builds the image with the NEXT_PUBLIC_* values baked in.
+#
+# Used by deploy-cloud-run.sh, which passes them as substitutions. Building here
+# rather than locally means no Docker install is needed on the dev machine.
+
+steps:
+  - name: gcr.io/cloud-builders/docker
+    id: build
+    args:
+      - build
+      - --tag=$_IMAGE
+      - --build-arg=NEXT_PUBLIC_FIREBASE_API_KEY=$_NEXT_PUBLIC_FIREBASE_API_KEY
+      - --build-arg=NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=$_NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+      - --build-arg=NEXT_PUBLIC_FIREBASE_PROJECT_ID=$_NEXT_PUBLIC_FIREBASE_PROJECT_ID
+      - --build-arg=NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=$_NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+      - --build-arg=NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=$_NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+      - --build-arg=NEXT_PUBLIC_FIREBASE_APP_ID=$_NEXT_PUBLIC_FIREBASE_APP_ID
+      - --build-arg=NEXT_PUBLIC_FIREBASE_STORAGE_ENABLED=$_NEXT_PUBLIC_FIREBASE_STORAGE_ENABLED
+      - --build-arg=NEXT_PUBLIC_SITE_URL=$_NEXT_PUBLIC_SITE_URL
+      - .
+
+  - name: gcr.io/cloud-builders/docker
+    id: push
+    args: [push, $_IMAGE]
+
+images:
+  - $_IMAGE
+
+options:
+  machineType: E2_HIGHCPU_8
+  logging: CLOUD_LOGGING_ONLY
+
+timeout: 1800s

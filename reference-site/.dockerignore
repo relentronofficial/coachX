@@ -1,0 +1,30 @@
+# Keep the build context small and make it impossible to bake secrets or
+# machine-local state into an image layer.
+
+node_modules
+.next
+out
+build
+
+# Secrets — NEXT_PUBLIC_* reach the build via --build-arg, never via a file.
+.env
+.env.*
+!.env.example
+
+# Runtime state. Seeded on first read from lib/site.ts; shipping a developer's
+# copy would publish local test users and submissions.
+.data
+
+# Tests, tooling and scratch — none of it runs in the container.
+tests
+test-results
+playwright-report
+playwright.config.ts
+vitest.config.ts
+*.log
+tsconfig.tsbuildinfo
+.git
+.gitignore
+README.md
+*.md
+!package.json
