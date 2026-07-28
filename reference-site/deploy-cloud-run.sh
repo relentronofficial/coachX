@@ -30,7 +30,12 @@ fi
 
 # ---- Read env file ---------------------------------------------------------
 # Only KEY=VALUE lines; comments and blanks ignored.
-get() { grep -E "^$1=" "$ENV_FILE" | head -1 | cut -d= -f2- | sed 's/^["'\'']//;s/["'\'']$//'; }
+#
+# `|| true` matters: a missing key makes grep exit 1, and under `set -euo
+# pipefail` that aborts the whole script at the assignment — silently, since
+# grep prints nothing. Optional keys (NEXT_PUBLIC_SITE_URL) must return empty
+# so the `${VAR:-default}` fallbacks below can do their job.
+get() { grep -E "^$1=" "$ENV_FILE" | head -1 | cut -d= -f2- | sed 's/^["'\'']//;s/["'\'']$//' || true; }
 
 AUTH_SECRET="$(get AUTH_SECRET)"
 ADMIN_EMAILS="$(get ADMIN_EMAILS)"
