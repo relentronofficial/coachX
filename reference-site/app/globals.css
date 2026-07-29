@@ -38,8 +38,28 @@
   .container-x {
     @apply mx-auto w-full max-w-container px-5 sm:px-6 lg:px-8;
   }
+  /* ---- Vertical rhythm ---------------------------------------------------
+     One scale for the whole site. Sections used to run 64/80/96px of padding,
+     which reads as "empty" rather than "premium" on a laptop viewport — the
+     eye loses the tie between a heading and the cards beneath it. 48/64/80
+     keeps the air and tightens that relationship.
+
+     Density modifiers exist so a page never hand-rolls `py-*` on a <Section>;
+     they are declared after `.section` so equal specificity resolves to them
+     on source order. Use them through the `density` prop, not raw classes. */
   .section {
-    @apply py-16 sm:py-20 lg:py-24;
+    @apply py-12 sm:py-16 lg:py-20;
+  }
+  .section-tight {
+    @apply py-8 sm:py-10 lg:py-14;
+  }
+  .section-flush {
+    @apply py-0;
+  }
+  /* Consecutive same-surface bands would otherwise stack their padding into a
+     100px+ gutter; collapse the seam so they read as one continuous surface. */
+  .section-seam + .section-seam {
+    @apply pt-0;
   }
 
   /* Buttons — pill radius (9999px) per the design tokens.
@@ -357,6 +377,222 @@
   /* The spinner still needs to read as "busy" without spinning. */
   .btn-spinner { border-top-color: currentColor; opacity: 0.5; }
   .btn-ripple { display: none; }
+}
+
+/* ==========================================================================
+   SURFACE & SCROLL MOTION LAYER
+   --------------------------------------------------------------------------
+   The site's second motion vocabulary: how surfaces, media and whole sections
+   behave as you scroll and point at them. Same contract as the button layer —
+   only compositor properties (transform / opacity / box-shadow / colour /
+   filter / clip-path) are ever transitioned, so nothing here can trigger
+   layout, and every identity is neutralised in the reduced-motion block at the
+   end.
+
+   Reveal is opt-in behind a `js-motion` class that layout.tsx puts on <html>
+   before first paint. If JS never runs the class never lands, every .fx-reveal
+   keeps its natural opacity, and the page reads normally — a scroll animation
+   must never be able to degrade into a blank screen. Same reason the class is
+   set in a pre-paint inline script rather than a useEffect: hydrating first
+   would flash the content in, out, then back.
+   ========================================================================== */
+
+:root {
+  --fx-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --fx-spring: cubic-bezier(0.34, 1.36, 0.64, 1);
+  --fx-dur: 620ms;
+  --fx-hover: 320ms;
+}
+
+/* ---- 1. Scroll reveal ---------------------------------------------------
+   Direction is expressed as offsets so one transition serves every variant;
+   `--fx-delay` is written inline by <Reveal stagger> to cascade a group. */
+.js-motion .fx-reveal {
+  opacity: 0;
+  transform: translate3d(var(--fx-x, 0px), var(--fx-y, 18px), 0) scale(var(--fx-s, 1));
+  transition:
+    opacity var(--fx-dur) var(--fx-ease),
+    transform var(--fx-dur) var(--fx-ease);
+  transition-delay: var(--fx-delay, 0ms);
+}
+.js-motion .fx-reveal[data-shown='true'] {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
+}
+.fx-up    { --fx-y: 18px; }
+.fx-down  { --fx-y: -18px; }
+.fx-left  { --fx-x: -26px; --fx-y: 0px; }
+.fx-right { --fx-x: 26px;  --fx-y: 0px; }
+.fx-zoom  { --fx-y: 0px; --fx-s: 0.94; }
+.fx-rise  { --fx-y: 30px; --fx-s: 0.97; }
+
+/* Below the 2-column breakpoint, a side reveal has nothing to slide in from —
+   the columns are stacked and full-bleed, so the pre-reveal X offset simply
+   pushes the document wider than the viewport and produces a horizontal
+   scrollbar. Degrade left/right to the vertical reveal there.
+   `tests/e2e/layout-redesign.spec.ts` pins this on the Pixel 5 project. */
+@media (max-width: 1023px) {
+  .fx-left,
+  .fx-right { --fx-x: 0px; --fx-y: 18px; }
+}
+
+/* ---- 2. Interactive surface — the card identity -------------------------
+   `.card` stays the static primitive; `.card-i` is the one that responds. */
+.card-i {
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform var(--fx-hover) var(--fx-ease),
+    box-shadow var(--fx-hover) var(--fx-ease),
+    border-color var(--fx-hover) var(--fx-ease);
+  will-change: transform;
+}
+.card-i:hover {
+  transform: translate3d(0, -5px, 0);
+  border-color: rgba(16, 80, 48, 0.35);
+  box-shadow: 0 22px 44px -20px rgba(10, 46, 30, 0.45);
+}
+.card-i:active { transform: translate3d(0, -1px, 0) scale(0.995); }
+/* Gloss sweep, shared construction with the primary button's identity. */
+.card-i::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.35) 50%, transparent 70%);
+  transform: translateX(-120%);
+  transition: transform 760ms var(--fx-ease);
+  pointer-events: none;
+}
+.card-i:hover::after { transform: translateX(120%); }
+
+/* ---- 3. Media frame — image scales inside a fixed frame ------------------
+   The frame clips, the image moves. Nothing reflows because only the child's
+   transform changes. */
+.fx-frame { overflow: hidden; }
+.fx-media {
+  transition:
+    transform 780ms var(--fx-ease),
+    filter 780ms var(--fx-ease);
+  will-change: transform;
+}
+.group:hover .fx-media,
+.fx-frame:hover .fx-media { transform: scale(1.07); }
+
+/* Caption/overlay that slides up out of the frame edge on hover. */
+.fx-overlay {
+  transform: translate3d(0, 100%, 0);
+  opacity: 0;
+  transition:
+    transform 420ms var(--fx-ease),
+    opacity 420ms var(--fx-ease);
+}
+.group:hover .fx-overlay,
+.fx-frame:hover .fx-overlay { transform: translate3d(0, 0, 0); opacity: 1; }
+
+/* ---- 4. Cursor-aware tilt (vars written by the client component) --------- */
+.fx-tilt {
+  transform: perspective(900px)
+    rotateX(calc(var(--tilt-y, 0) * 1deg))
+    rotateY(calc(var(--tilt-x, 0) * 1deg))
+    translate3d(0, 0, 0);
+  transition: transform 240ms var(--fx-ease);
+  transform-style: preserve-3d;
+}
+
+/* ---- 5. Ambient float for decorative chips ------------------------------ */
+.fx-float { animation: fx-float 7s ease-in-out infinite; }
+.fx-float-slow { animation: fx-float 11s ease-in-out infinite; }
+@keyframes fx-float {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -9px, 0); }
+}
+
+/* ---- 6. Progressive image load — blur-up -------------------------------- */
+.fx-blur {
+  filter: blur(16px);
+  transform: scale(1.04);
+  transition:
+    filter 720ms var(--fx-ease),
+    transform 720ms var(--fx-ease);
+}
+.fx-blur[data-loaded='true'] { filter: blur(0); transform: scale(1); }
+
+/* ---- 7. Text link underline — scaleX, not background-size ---------------- */
+.fx-link { position: relative; text-decoration: none; }
+.fx-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 300ms var(--fx-ease);
+}
+.fx-link:hover::after { transform: scaleX(1); }
+
+/* ---- 8. Marquee — duplicated track, translated by exactly half ----------- */
+.fx-marquee-mask {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+}
+.fx-marquee { animation: fx-marquee 34s linear infinite; }
+.fx-marquee-mask:hover .fx-marquee { animation-play-state: paused; }
+@keyframes fx-marquee {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+
+/* ---- 9. Before/After comparison ----------------------------------------- */
+.fx-compare { --split: 50%; }
+.fx-compare-clip { clip-path: inset(0 calc(100% - var(--split)) 0 0); }
+.fx-compare-handle { left: var(--split); }
+
+/* ---- 10. Section surface accents ---------------------------------------- */
+.surface-tint {
+  background:
+    radial-gradient(60% 60% at 12% 0%, rgba(16, 80, 48, 0.06), transparent 62%),
+    radial-gradient(45% 55% at 92% 8%, rgba(208, 160, 48, 0.08), transparent 58%);
+}
+.surface-ink {
+  background:
+    radial-gradient(55% 75% at 50% 0%, rgba(208, 160, 48, 0.22), transparent 68%),
+    #0a2e1e;
+}
+/* Hairline that fades out at both ends — softer than a full-bleed border. */
+.rule-fade {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(16, 80, 48, 0.22), transparent);
+}
+
+/* ---- Reduced motion: keep every state, drop every movement --------------- */
+@media (prefers-reduced-motion: reduce) {
+  .js-motion .fx-reveal,
+  .js-motion .fx-reveal[data-shown='true'] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .card-i,
+  .fx-media,
+  .fx-overlay,
+  .fx-tilt,
+  .fx-blur { transition-duration: 1ms !important; }
+  .card-i:hover,
+  .card-i:active,
+  .group:hover .fx-media,
+  .fx-frame:hover .fx-media,
+  .fx-tilt { transform: none !important; }
+  .card-i:hover::after { transform: translateX(-120%) !important; }
+  .fx-overlay { opacity: 1; transform: none !important; }
+  .fx-blur { filter: none !important; }
+  .fx-float,
+  .fx-float-slow,
+  .fx-marquee { animation: none !important; }
+  .fx-link::after { transition: none !important; }
 }
 
 /* ==========================================================================

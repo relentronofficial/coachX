@@ -4,7 +4,9 @@ import {
   StatBar,
   LogoCloud,
   Features,
+  ToolShowcase,
   Process,
+  Transformation,
   ProgramCards,
   Testimonials,
   Founder,
@@ -29,7 +31,9 @@ export default async function HomePage() {
       <StatBar />
       <LogoCloud />
       <Features />
+      <ToolShowcase />
       <Process />
+      <Transformation />
       <ProgramCards limit={3} />
       <Testimonials />
       <Founder />

@@ -49,6 +49,18 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const user = await getSession();
   return (
     <html lang="en" className={`${inter.variable} ${lora.variable}`}>
+      <head>
+        {/*
+          Arms the scroll-reveal layer before first paint. `.fx-reveal` only
+          hides content under `.js-motion`, so if this never runs (JS disabled,
+          script blocked) every revealed section stays visible instead of the
+          page going blank. Inline and pre-paint on purpose — doing it in an
+          effect would flash the content in, out, then back.
+        */}
+        <script
+          dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js-motion')" }}
+        />
+      </head>
       <body>
         <AuthProvider initialUser={user ? { uid: '', email: user.email, name: user.name, role: user.role } : null}>
           <Header />

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { Section, SectionHeading, Badge } from '@/components/ui';
 import { CTA } from '@/components/sections';
+import { Stagger } from '@/components/motion/Reveal';
 import { tools, bonusTools, type ToolMeta } from '@/lib/tools';
 
 export const metadata: Metadata = {
@@ -12,9 +13,11 @@ export const metadata: Metadata = {
 function ToolCard({ tool }: { tool: ToolMeta }) {
   return (
     <Link href={tool.href} className="block h-full" data-testid={`tool-card-${tool.slug}`}>
-      <div className="card group flex h-full flex-col transition-transform hover:-translate-y-1 hover:shadow-glow">
+      <div className="card card-i group flex h-full flex-col">
         <div className="flex items-start justify-between gap-3">
-          <span className="grid h-12 w-12 place-items-center rounded-card bg-blush text-2xl">{tool.icon}</span>
+          <span className="grid h-12 w-12 place-items-center rounded-card bg-blush text-2xl transition-transform duration-300 group-hover:scale-110">
+            {tool.icon}
+          </span>
           <span className="rounded-pill bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-500">{tool.category}</span>
         </div>
         <h3 className="mt-4 text-lg font-bold text-ink">{tool.name}</h3>
@@ -37,27 +40,27 @@ export default function ToolsPage() {
           lead="Seven free, interactive tools — from finding your niche to scoring your skills and building momentum."
         />
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" data-testid="tools-grid">
+        <Stagger className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3" itemClassName="h-full" testId="tools-grid">
           {tools.map((t) => (
             <ToolCard key={t.slug} tool={t} />
           ))}
-        </div>
+        </Stagger>
 
         {bonusTools.length > 0 ? (
-          <div className="mt-14">
+          <div className="mt-10">
             <div className="mb-4 flex items-center gap-2">
               <h2 className="text-sm font-bold uppercase tracking-wide text-ink">Also useful</h2>
-              <span className="h-px flex-1 bg-slate-200" />
+              <span className="rule-fade flex-1" />
             </div>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <Stagger className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3" itemClassName="h-full">
               {bonusTools.map((t) => (
                 <ToolCard key={t.slug} tool={t} />
               ))}
-            </div>
+            </Stagger>
           </div>
         ) : null}
 
-        <p className="mt-10 text-center text-sm text-slate-400">
+        <p className="mt-8 text-center text-sm text-slate-400">
           <Badge>Original</Badge>{' '}
           <span className="ml-2">
             All tools are original CoachX implementations. No login, no payment — your answers stay on your device.

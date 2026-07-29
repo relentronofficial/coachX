@@ -40,7 +40,8 @@ export default function MasterclassPage() {
 
           <div id="reserve" className="rounded-xl2 bg-white p-6 text-slate-800 shadow-glow-lg sm:p-8">
             <h2 className="text-lg font-bold text-ink">Reserve your spot</h2>
-            <p className="mb-4 mt-1 text-sm text-slate-500">04–06 Aug 2026 · 7:00–8:30 AM IST · Zoom Live · ₹499 (payment opens soon).</p>
+            {/* Price intentionally omitted — the public site is value-led. */}
+            <p className="mb-4 mt-1 text-sm text-slate-500">04–06 Aug 2026 · 7:00–8:30 AM IST · Zoom Live · limited seats.</p>
             <LeadForm cta="Reserve your spot →" source="masterclass" formKey="masterclass" formLabel="Masterclass Registration" note="No payment yet — you’re reserving your spot. We’ll email the joining details." />
           </div>
         </Container>

@@ -22,7 +22,8 @@ export default function JoinPage() {
         </div>
         <div className="card">
           <h2 className="text-lg font-bold text-ink">Reserve your spot</h2>
-          <p className="mb-4 mt-1 text-sm text-slate-500">04–06 Aug 2026 · Zoom Live · ₹499 one-time (payment opens soon).</p>
+          {/* Price intentionally omitted — the public site is value-led. */}
+          <p className="mb-4 mt-1 text-sm text-slate-500">04–06 Aug 2026 · Zoom Live · limited seats.</p>
           <LeadForm cta="Reserve your spot" source="join" formKey="join" formLabel="Join Form" />
         </div>
       </div>

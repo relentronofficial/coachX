@@ -63,9 +63,18 @@ export const footerNav: { title: string; links: NavItem[] }[] = [
   },
 ];
 
+/**
+ * Homepage stat band.
+ *
+ * Deliberately price-free: the public site is value-led, so the entry fee that
+ * used to sit in slot two was replaced with the session length (derived from
+ * the stated 7:00–8:30 AM IST slot). Keep new stats to facts already published
+ * elsewhere on the site — a stat band is the easiest place to accidentally
+ * invent a claim.
+ */
 export const stats = [
   { value: '3 Days', label: 'live coaching-growth workshop' },
-  { value: '₹499', label: 'one-time entry' },
+  { value: '90 Min', label: 'live session every morning' },
   { value: '5-Week', label: 'growth framework' },
   { value: '7 AM IST', label: 'daily, live on Zoom' },
 ];
@@ -219,8 +228,11 @@ export const faqs = [
   { q: 'Who is this workshop for?', a: 'Coaches, trainers, and consultants who want a predictable system to attract leads and convert them into paying clients.' },
   { q: 'Do I need an existing audience?', a: 'No. The framework covers attracting high-quality leads from scratch using a zero-rupee marketing approach.' },
   { q: 'When and where does it happen?', a: 'Three live Zoom sessions from 7:00–8:30 AM IST across the workshop dates. Recordings are available for a limited time.' },
-  { q: 'How much does it cost?', a: 'A one-time ₹499 entry for the full 3-day live workshop.' },
-  { q: 'Is the fee refundable?', a: 'The ₹499 workshop fee is a one-time, non-refundable payment.' },
+  // These two used to quote the entry fee. The public site is value-led, so
+  // they now answer the same questions without a figure — reserving a spot is
+  // where the number belongs. Don't reintroduce an amount here.
+  { q: 'What do I get out of the 3 days?', a: 'A defined niche, one clear offer, and a lead-and-conversion system you can run the week after — not a folder of notes.' },
+  { q: 'How do I reserve a spot?', a: 'Reserve from the workshop page and we email the joining details. Seats are limited because the sessions stay interactive.' },
 ];
 
 /** Deterministic placeholder image. Swap for your own brand assets. */

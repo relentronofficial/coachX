@@ -2,27 +2,28 @@ import Image from 'next/image';
 import type { Metadata } from 'next';
 import { Section, SectionHeading, Button, Eyebrow } from '@/components/ui';
 import { StatBar, CTA } from '@/components/sections';
+import { Reveal, Stagger } from '@/components/motion/Reveal';
 
 export const metadata: Metadata = { title: 'About' };
 
 export default function AboutPage() {
   return (
     <>
-      <Section>
-        <div className="grid items-center gap-12 lg:grid-cols-2">
-          <div>
+      <Section className="surface-tint">
+        <div className="grid items-center gap-8 lg:grid-cols-2">
+          <Reveal direction="left">
             <Eyebrow>About the founder</Eyebrow>
             <h1 className="text-h1">Meet Sakthivel Pannerselvam</h1>
-            <p className="mt-5 text-lg text-slate-500">
+            <p className="mt-4 text-lg text-slate-500">
               Founder of CoachX and Tamil Business Tribe. Placeholder founder story — describe the mission,
               the coaches you serve, and why the community exists. Replace this copy with your own.
             </p>
-            <div className="mt-8 flex gap-3">
-              <Button href="/join" variant="amber">Join the community</Button>
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+              <Button href="/join" variant="amber" fx="book">Join the community</Button>
               <Button href="/programs" variant="secondary">See programs</Button>
             </div>
-          </div>
-          <div className="flex justify-center">
+          </Reveal>
+          <Reveal direction="zoom" delay={120} className="flex justify-center">
             <div className="relative w-fit">
               <Image
                 src="/brand/founder.png"
@@ -37,20 +38,20 @@ export default function AboutPage() {
                 <p className="text-xs text-slate-500">Founder · CoachX</p>
               </div>
             </div>
-          </div>
+          </Reveal>
         </div>
       </Section>
       <StatBar />
       <Section>
         <SectionHeading eyebrow="Values" title="What we stand for" />
-        <div className="grid gap-6 md:grid-cols-3">
+        <Stagger className="grid gap-5 md:grid-cols-3" itemClassName="h-full" step={90}>
           {['Clarity over hype', 'Community over competition', 'Consistency over intensity'].map((v) => (
-            <div key={v} className="card">
+            <div key={v} className="card card-i h-full">
               <h3 className="text-lg font-bold text-ink">{v}</h3>
               <p className="mt-2 text-sm text-slate-500">Placeholder description of this value and how it shows up day to day.</p>
             </div>
           ))}
-        </div>
+        </Stagger>
       </Section>
       <CTA />
     </>
