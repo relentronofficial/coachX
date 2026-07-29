@@ -86,15 +86,21 @@ export function Hero({ content }: { content?: Partial<HeroContent> }) {
         {/* Founder portrait framed on a clean brand backdrop */}
         <Reveal direction="zoom" delay={120} className="flex justify-center lg:justify-end">
           <div className="relative">
-            <div className="absolute left-1/2 top-1/2 -z-10 h-[360px] w-[360px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-slate-100 sm:h-[480px] sm:w-[480px] lg:h-[560px] lg:w-[560px]" />
-            <div className="absolute left-1/2 top-1/2 -z-10 h-[380px] w-[380px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(16,80,48,0.14),transparent_65%)] blur-2xl sm:h-[520px] sm:w-[520px] lg:h-[580px] lg:w-[580px]" />
+            {/* Backdrop discs scale with the portrait — they frame it, so
+                growing the image alone would push the head out of the circle. */}
+            <div className="absolute left-1/2 top-1/2 -z-10 h-[400px] w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-slate-100 sm:h-[540px] sm:w-[540px] lg:h-[640px] lg:w-[640px]" />
+            <div className="absolute left-1/2 top-1/2 -z-10 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(16,80,48,0.14),transparent_65%)] blur-2xl sm:h-[580px] sm:w-[580px] lg:h-[670px] lg:w-[670px]" />
             <Image
               src="/brand/founder.png"
               alt="CoachX"
               width={408}
               height={612}
               priority
-              className="relative h-[400px] w-auto object-contain drop-shadow-2xl sm:h-[500px] lg:h-[min(640px,70vh)]"
+              /* The viewport cap stays: this is the only element on the first
+                 screen tall enough to push the CTAs below the fold on a short
+                 laptop, so height is bounded by vh, not just by px. */
+              sizes="(min-width: 1024px) 480px, (min-width: 640px) 380px, 300px"
+              className="relative h-[440px] w-auto object-contain drop-shadow-2xl sm:h-[560px] lg:h-[min(760px,82vh)]"
             />
             <div className="fx-float absolute bottom-5 -left-2 rounded-pill bg-white px-4 py-2 shadow-soft sm:-left-4">
               <p className="text-xs font-bold text-amber-dark">★★★★★</p>
