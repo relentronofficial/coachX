@@ -537,16 +537,24 @@ export function Founder() {
   ];
   return (
     <Section className="bg-slate-50">
+      {/* 5/7 rather than 4/8: at this portrait's 2:3 ratio a 520px-tall image is
+          ~347px wide, which a 4-column track cannot hold without `w-auto`
+          shrinking it back down to fit. The column has to grow with it. */}
       <div className="grid items-center gap-8 lg:grid-cols-12">
         {/* Photo (transparent cutout, height-contained to fit the section) */}
-        <Reveal direction="left" className="flex justify-center lg:col-span-4">
+        <Reveal direction="left" className="flex justify-center lg:col-span-5">
           <div className="relative w-fit">
             <Image
               src="/brand/founder.png"
               alt="Sakthivel Pannerselvam, Founder of CoachX"
               width={408}
               height={612}
-              className="h-[300px] w-auto object-contain drop-shadow-xl sm:h-[360px]"
+              /* Without `sizes` the optimizer picked a 204px-wide variant for a
+                 slot that renders ~347px, which is a visible upscale. The
+                 source is only 408x612, so this asks for the largest variant
+                 the asset can actually supply. */
+              sizes="(min-width: 1024px) 350px, (min-width: 640px) 310px, 260px"
+              className="h-[380px] w-auto object-contain drop-shadow-xl sm:h-[460px] lg:h-[520px]"
             />
             <div className="absolute bottom-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-pill bg-white px-5 py-2 text-center shadow-soft">
               <p className="text-sm font-extrabold text-ink">Sakthivel Pannerselvam</p>
@@ -556,7 +564,7 @@ export function Founder() {
         </Reveal>
 
         {/* Copy */}
-        <Reveal direction="right" delay={100} className="lg:col-span-8">
+        <Reveal direction="right" delay={100} className="lg:col-span-7">
           <p className="eyebrow">Meet your mentor</p>
           <h2 className="mt-2 text-h2">Learn from the founder, Sakthivel Pannerselvam</h2>
           <p className="mt-3 text-lg text-slate-500">
