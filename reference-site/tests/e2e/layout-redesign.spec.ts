@@ -42,13 +42,18 @@ for (const path of PUBLIC_PAGES) {
 }
 
 test('no CoachX price is rendered on the public site', async ({ page }) => {
-  // Member revenue results ("₹10 Lakhs revenue") are outcomes, not prices, and
-  // are expected on /stories — so this asserts on the pages that used to carry
-  // the entry fee instead of banning the symbol site-wide.
+  // Asserts on *pricing*, not on the rupee symbol. Member revenue results
+  // ("₹10 Lakhs revenue") are outcomes and are meant to appear — on /stories
+  // and, since the testimonials rebuild, in the video caption on the homepage
+  // too. Banning ₹ outright would forbid the proof this site is built on, so
+  // this looks for the entry fee and for cadence markers, which are what
+  // actually distinguish a price from a result.
+  const PRICE = /₹\s?499|₹\s?\d[\d,]*\s*(?:\/\s*mo|per month|one-time|onetime)|(?:price|pricing|cost)\s*:/i;
+
   for (const path of ['/', '/programs', '/programs/workshop', '/masterclass', '/join']) {
     await page.goto(path);
     const body = await page.locator('body').innerText();
-    expect(body, `${path} still shows a price`).not.toMatch(/₹\s?\d/);
+    expect(body, `${path} still shows a price`).not.toMatch(PRICE);
   }
 });
 

@@ -461,68 +461,95 @@ export async function ProgramCards({
   );
 }
 
-/** Testimonials — quotes, the founder video, and the revenue proof strip. */
+/**
+ * Testimonials — the members' own video and revenue screenshots.
+ *
+ * This section used to lead with three quote cards whose words were
+ * placeholders ("Replace with a real member testimonial") illustrated by
+ * picsum.photos stock faces, while the material that is actually real — the
+ * video and the revenue screenshots — sat underneath at thumbnail size. On a
+ * page whose job is to be believed, invented quotes over stock portraits are
+ * worse than no quotes, so the real proof leads and the placeholders are gone.
+ * The named case studies still live at /stories.
+ *
+ * The screenshots stay unattributed on purpose: they arrived as one unlabelled
+ * set, so tying one to a person would invent a claim about their earnings.
+ */
 export function Testimonials() {
   const featured = stories.find((s) => s.video);
 
   return (
     <Section>
       <SectionHeading
-        eyebrow="Testimonials"
-        title="Results from the tribe"
-        lead="Real member results. Quotes are placeholders — swap in their own words."
+        eyebrow="Proof"
+        title="Real results from the tribe"
+        lead="Their own words, and their own numbers — not our summary of them."
       />
-      <Stagger className="grid gap-5 md:grid-cols-3" itemClassName="h-full">
-        {stories.slice(0, 3).map((s) => (
-          <figure key={s.slug} className="card card-i flex h-full flex-col">
-            <span aria-hidden="true" className="font-serif text-4xl leading-none text-teal/25">
-              &ldquo;
-            </span>
-            <blockquote className="mt-1 text-slate-700">{s.quote}</blockquote>
-            <figcaption className="mt-auto flex items-center gap-3 pt-5">
-              <Image src={img(s.slug, 80, 80)} alt="" width={40} height={40} className="h-10 w-10 rounded-pill object-cover" />
-              <div>
-                <p className="text-sm font-bold text-ink">{s.name}</p>
-                <p className="text-xs text-slate-500">{s.role}</p>
+
+      <div className="grid items-start gap-8 lg:grid-cols-12">
+        {featured?.video && (
+          <Reveal direction="left" className="lg:col-span-5">
+            <figure className="mx-auto max-w-[320px]">
+              {/* The source is 720x1280. At the old max-w-2xl this rendered
+                  ~1200px tall and dominated the page; a portrait clip needs a
+                  portrait-sized column. */}
+              {/* preload="none": 4 MB is real bandwidth, so don't fetch until played. */}
+              {/* aspect-[9/16] matches the 720x1280 source. Without it the
+                  element has no intrinsic ratio to reserve space with — because
+                  preload="none" means no metadata is fetched — so it collapses
+                  to the ~150px default height until the user hits play. */}
+              <video
+                controls
+                preload="none"
+                playsInline
+                className="aspect-[9/16] w-full rounded-card border border-slate-200 bg-slate-900 shadow-soft"
+              >
+                <source src={featured.video} type="video/mp4" />
+                Your browser cannot play this video.
+              </video>
+              <figcaption className="mt-3 text-center">
+                <p className="text-sm font-bold text-ink">
+                  {featured.name} · {featured.role}
+                </p>
+                <p className="text-xs text-slate-500">{featured.result} — in her own words</p>
+              </figcaption>
+            </figure>
+          </Reveal>
+        )}
+
+        <div className="lg:col-span-7">
+          <Reveal>
+            {/* Not "screenshots": these are the brand's own podcast promo cards
+                with the member, their business and the revenue figure printed
+                on them — not captures of a dashboard or bank statement. */}
+            <h3 className="text-sm font-bold uppercase tracking-[0.14em] text-slate-500">
+              Revenue results shared by the tribe
+            </h3>
+          </Reveal>
+          <Stagger className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3" step={70} direction="zoom">
+            {revenueProof.map((p) => (
+              <div
+                key={p.src}
+                className="fx-frame card-i group aspect-square rounded-card border border-slate-200 shadow-sm"
+              >
+                <Image
+                  src={p.src}
+                  alt={p.alt}
+                  width={1080}
+                  height={1080}
+                  sizes="(min-width: 1024px) 200px, (min-width: 640px) 30vw, 45vw"
+                  className="fx-media h-full w-full object-cover"
+                />
               </div>
-            </figcaption>
-          </figure>
-        ))}
-      </Stagger>
-
-      {featured?.video && (
-        <Reveal direction="rise" className="mx-auto mt-10 max-w-2xl">
-          <figure>
-            <figcaption className="mb-3 text-center text-sm font-bold uppercase tracking-wide text-slate-500">
-              Video testimonial — {featured.name}, {featured.role}
-            </figcaption>
-            {/* preload="none": 4 MB is still real bandwidth, so don't fetch it until played. */}
-            <video controls preload="none" playsInline className="w-full rounded-card border border-slate-200 shadow-sm">
-              <source src={featured.video} type="video/mp4" />
-              Your browser cannot play this video.
-            </video>
-          </figure>
-        </Reveal>
-      )}
-
-      <div className="mt-10">
-        <h3 className="text-center text-sm font-bold uppercase tracking-wide text-slate-500">
-          Revenue screenshots from the tribe
-        </h3>
-        <Stagger className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5" step={60} direction="zoom">
-          {revenueProof.map((p) => (
-            <div key={p.src} className="fx-frame group rounded-card border border-slate-200 shadow-sm">
-              <Image
-                src={p.src}
-                alt={p.alt}
-                width={1080}
-                height={1080}
-                sizes="(min-width: 1024px) 20vw, (min-width: 640px) 33vw, 50vw"
-                className="fx-media object-cover"
-              />
-            </div>
-          ))}
-        </Stagger>
+            ))}
+          </Stagger>
+          <Reveal delay={120}>
+            <p className="mt-4 text-xs text-slate-400">
+              Screenshots shared by members of the tribe. Results vary — these are individual outcomes, not a
+              promise.
+            </p>
+          </Reveal>
+        </div>
       </div>
 
       <div className="mt-8 text-center">
