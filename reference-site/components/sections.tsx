@@ -511,7 +511,9 @@ export function Testimonials() {
                 <p className="text-sm font-bold text-ink">
                   {featured.name} · {featured.role}
                 </p>
-                <p className="text-xs text-slate-500">{featured.result} — in her own words</p>
+                <p className="text-xs text-slate-500">
+                  {featured.city} — {featured.result}
+                </p>
               </figcaption>
             </figure>
           </Reveal>

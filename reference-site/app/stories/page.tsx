@@ -32,8 +32,10 @@ export default function StoriesPage() {
               <div className="p-5">
                 <Badge>{s.role}</Badge>
                 <h3 className="mt-3 text-lg font-bold text-ink">{s.name}</h3>
-                <p className="mt-1 text-sm font-semibold text-teal">{s.result}</p>
-                <p className="mt-2 text-sm text-slate-500">“{s.quote}”</p>
+                <p className="text-sm text-slate-500">{s.city}</p>
+                <p className="mt-2 text-lg font-extrabold text-teal">{s.result}</p>
+                {/* Only render words the member actually said. */}
+                {s.quote ? <p className="mt-2 text-sm text-slate-500">“{s.quote}”</p> : null}
               </div>
             </Link>
           ))}

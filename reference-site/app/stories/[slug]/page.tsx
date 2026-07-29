@@ -35,17 +35,22 @@ export default async function StoryPage({ params }: { params: Promise<{ slug: st
             <div>
               <Badge>{story.role}</Badge>
               <h1 className="mt-2 text-h2">{story.name}</h1>
+              <p className="text-sm text-slate-500">{story.city}</p>
             </div>
           </div>
 
           <div className="mt-6 rounded-card border-2 border-teal bg-white p-6 shadow-glow">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Result</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Revenue</p>
             <p className="mt-1 text-2xl font-extrabold text-teal">{story.result}</p>
           </div>
 
-          <blockquote className="mt-8 border-l-4 border-slate-200 pl-5 text-lg text-slate-700">
-            “{story.quote}”
-          </blockquote>
+          {/* Rendered only when the member's own words exist — an empty pair of
+              quote marks reads as a testimonial nobody gave. */}
+          {story.quote ? (
+            <blockquote className="mt-8 border-l-4 border-slate-200 pl-5 text-lg text-slate-700">
+              “{story.quote}”
+            </blockquote>
+          ) : null}
 
           {story.video && (
             /* preload="none": 4 MB is still real bandwidth, so don't fetch it until played. */
@@ -80,8 +85,9 @@ export default async function StoryPage({ params }: { params: Promise<{ slug: st
           <h3 className="text-sm font-bold uppercase tracking-wide text-ink">More stories</h3>
           <div className="mt-4 grid gap-4 sm:grid-cols-3">
             {more.map((s) => (
-              <Link key={s.slug} href={`/stories/${s.slug}`} className="card transition-transform hover:-translate-y-1">
+              <Link key={s.slug} href={`/stories/${s.slug}`} className="card card-i">
                 <p className="text-sm font-bold text-ink">{s.name}</p>
+                <p className="text-xs text-slate-500">{s.role}</p>
                 <p className="mt-1 text-xs font-semibold text-teal">{s.result}</p>
               </Link>
             ))}

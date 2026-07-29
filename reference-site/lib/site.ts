@@ -176,21 +176,41 @@ export const tools: Tool[] = [
 export type Story = {
   slug: string;
   name: string;
+  /** Business name, exactly as supplied by the brand. */
   role: string;
+  city: string;
   result: string;
-  quote: string;
+  /**
+   * The member's own words. Optional and currently unset for every story: the
+   * brand supplied names, businesses, cities and figures but no quotes, and a
+   * testimonial is the one thing that must never be written on someone's
+   * behalf. Render sites already handle its absence — add real words here when
+   * they arrive rather than reinstating filler.
+   */
+  quote?: string;
   /** Video testimonial served from `public/testimonials/`. Optional — most stories have none. */
   video?: string;
 };
 
-// Real member names/results from the brand; quotes are placeholders — replace with real ones.
+/**
+ * Member success stories — supplied verbatim by the brand.
+ *
+ * ORDER IS DELIBERATE AND CLIENT-SPECIFIED. It is not sorted by revenue —
+ * ₹1.5 Lakhs sits above ₹3 Lakhs at the end — so do not "fix" it with a sort.
+ * Names, businesses, cities and figures are reproduced exactly as given and
+ * must not be edited, including spellings that look like typos.
+ *
+ * Slugs for the three members who already had a story page (annamalai, anusha,
+ * rajkamal) are kept so their URLs don't break.
+ */
 export const stories: Story[] = [
-  { slug: 'rajkamal', name: 'Rajkamal', role: 'SkilxNation', result: '₹10 Lakhs revenue', quote: 'The framework gave me a predictable system to grow.' },
-  { slug: 'anusha', name: 'Anusha', role: 'Glorious', result: '₹10 Lakhs revenue', quote: 'I finally have a clear path from leads to paying clients.', video: '/testimonials/anusha-revenue.mp4' },
-  { slug: 'annamalai', name: 'Annamalai', role: 'Dream Zone', result: '₹15 Lakhs revenue', quote: 'Predictable revenue changed how I run my business.' },
-  { slug: 'member-4', name: 'Member Name', role: 'Coaching business', result: 'Placeholder result', quote: 'Replace with a real member testimonial.' },
-  { slug: 'member-5', name: 'Member Name', role: 'Coaching business', result: 'Placeholder result', quote: 'Replace with a real member testimonial.' },
-  { slug: 'member-6', name: 'Member Name', role: 'Coaching business', result: 'Placeholder result', quote: 'Replace with a real member testimonial.' },
+  { slug: 'oviya', name: 'Oviya', role: "Oviya's Meraki", city: 'Chennai', result: '₹20 Lakhs' },
+  { slug: 'annamalai', name: 'Annamalai', role: 'Dream Zone', city: 'Chennai', result: '₹15 Lakhs' },
+  { slug: 'anusha', name: 'Anusha', role: 'Gloroius Minds', city: 'Chennai', result: '₹10 Lakhs', video: '/testimonials/anusha-revenue.mp4' },
+  { slug: 'rajkamal', name: 'Rajkamal', role: 'Skillx Nation', city: 'Madurai', result: '₹10 Lakhs' },
+  { slug: 'vishnu-ram', name: 'Vishnu Ram', role: 'Improve your Chess', city: 'Coimbatore', result: '₹6 Lakhs' },
+  { slug: 'roja-rani', name: 'Roja Rani', role: 'Rojawin Bridal Studio', city: 'Chennai', result: '₹1.5 Lakhs' },
+  { slug: 'muthu-kishore', name: 'Muthu Kishore', role: 'Passive Way', city: 'Coimbatore', result: '₹3 Lakhs' },
 ];
 
 /**

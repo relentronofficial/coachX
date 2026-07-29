@@ -2,18 +2,34 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { mainNav } from '@/lib/site';
 import { Button, Container } from './ui';
 import { Logo } from './Logo';
 import { useAuth } from './auth/AuthProvider';
 import { isAdminRole } from '@/lib/auth/permissions';
 
+/**
+ * Decides whether a nav item points at the page currently being viewed.
+ *
+ * Nested routes count as their parent section — /programs/workshop keeps
+ * "Programs" lit, /stories/anusha keeps "Testimonials" lit — otherwise the
+ * indicator vanishes exactly when a visitor has gone deepest and most needs to
+ * know where they are. Hash links (/#faq) are positions on a page rather than
+ * pages, so they are never marked current.
+ */
+export function isNavItemActive(href: string, pathname: string): boolean {
+  if (href.includes('#')) return false;
+  if (href === '/') return pathname === '/';
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
 /** Announcement bar + sticky navbar with a responsive mobile menu. */
 export function Header() {
   const [open, setOpen] = useState(false);
   const { isAuthenticated, user, logout } = useAuth();
   const router = useRouter();
+  const pathname = usePathname() ?? '/';
 
   async function onLogout() {
     await logout();
@@ -41,11 +57,19 @@ export function Header() {
           </Link>
 
           <nav className="hidden items-center gap-7 md:flex">
-            {mainNav.map((item) => (
-              <Link key={item.href} href={item.href} className="text-sm font-medium text-slate-600 hover:text-ink">
-                {item.label}
-              </Link>
-            ))}
+            {mainNav.map((item) => {
+              const active = isNavItemActive(item.href, pathname);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-current={active ? 'page' : undefined}
+                  className="nav-link text-sm font-medium text-slate-600 hover:text-ink"
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
           </nav>
 
           <div className="hidden items-center gap-3 md:flex">
@@ -94,16 +118,20 @@ export function Header() {
         {open ? (
           <div className="border-t border-slate-200 bg-white md:hidden">
             <Container className="flex flex-col gap-1 py-4">
-              {mainNav.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setOpen(false)}
-                  className="rounded-pill px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
-                >
-                  {item.label}
-                </Link>
-              ))}
+              {mainNav.map((item) => {
+                const active = isNavItemActive(item.href, pathname);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setOpen(false)}
+                    aria-current={active ? 'page' : undefined}
+                    className="nav-row rounded-pill px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
               <div className="mt-2 flex flex-col gap-2">
                 {isAuthenticated ? (
                   <button onClick={onLogout} className="btn-secondary">Log out ({user?.name})</button>

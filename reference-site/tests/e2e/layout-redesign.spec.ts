@@ -57,6 +57,39 @@ test('no CoachX price is rendered on the public site', async ({ page }) => {
   }
 });
 
+test('the nav marks exactly one item as the current page', async ({ page }) => {
+  // Runs on both device projects, so it covers the desktop underline and the
+  // mobile menu row — the mobile nav is inside a toggled menu, which is the
+  // easy half to forget when adding an active state.
+  const cases: [string, string][] = [
+    ['/about', 'About'],
+    ['/programs', 'Programs'],
+    ['/programs/workshop', 'Programs'],
+    ['/tools', 'Tools'],
+    ['/stories/anusha', 'Testimonials'],
+  ];
+
+  for (const [path, expected] of cases) {
+    await page.goto(path);
+
+    const toggle = page.getByRole('button', { name: 'Toggle menu' });
+    if (await toggle.isVisible()) await toggle.click();
+
+    // `:visible` matters — the desktop nav stays in the DOM behind `hidden
+    // md:flex` on mobile, so an unfiltered locator counts both navs and this
+    // asserts on markup the user cannot see.
+    const current = page.locator('header a[aria-current="page"]:visible');
+    await expect(current, `${path} should mark one nav item`).toHaveCount(1);
+    await expect(current).toHaveText(expected);
+  }
+
+  // A page with no nav entry of its own must not light an unrelated item.
+  await page.goto('/join');
+  const toggle = page.getByRole('button', { name: 'Toggle menu' });
+  if (await toggle.isVisible()) await toggle.click();
+  await expect(page.locator('header a[aria-current="page"]:visible')).toHaveCount(0);
+});
+
 test('scroll-revealed content is visible once scrolled to', async ({ page }) => {
   await page.goto('/');
   const programs = page.locator('#programs');
